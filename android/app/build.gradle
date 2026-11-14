@@ -1,0 +1,36 @@
+plugins { id 'com.android.application' }
+def origin = providers.gradleProperty('plannerOrigin').getOrElse('').trim()
+if (origin) {
+    def uri = new URI(origin)
+    if (uri.scheme != 'https' || !uri.host || uri.userInfo || uri.query || uri.fragment ||
+        !(uri.path in ['', '/']) || !(uri.port in [-1,443]) || !uri.host.contains('.') ||
+        uri.host ==~ /[0-9.]+/ || uri.host.endsWith('.localhost') || uri.host.endsWith('.invalid') || uri.host.endsWith('.local')) {
+        throw new GradleException('Use an approved public HTTPS origin only, with no path or credentials.')
+    }
+    origin = 'https://' + uri.host.toLowerCase(java.util.Locale.ROOT)
+}
+android {
+    namespace 'com.example.aistudyplanner'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.example.aistudyplanner'
+        minSdk 23
+        targetSdk 35
+        versionCode 1
+        versionName '0.1.0-preview'
+        buildConfigField 'String', 'WEB_ORIGIN', groovy.json.JsonOutput.toJson(origin)
+        // Empty until a real domain is approved. Never bypass the browser's association verification.
+        resValue 'string', 'asset_statements', groovy.json.JsonOutput.toJson(origin ? [[
+            relation: ['delegate_permission/common.handle_all_urls'],
+            target: [namespace: 'web', site: origin]
+        ]] : []).replace('"', '\\"')
+    }
+    buildFeatures { buildConfig true }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    buildTypes { release { minifyEnabled false } }
+}
+dependencies {
+    // Compatible with the installed API 35 SDK. TWA is verified by the browser, never by the app.
+    implementation 'androidx.browser:browser:1.8.0'
+    testImplementation 'junit:junit:4.13.2'
+}

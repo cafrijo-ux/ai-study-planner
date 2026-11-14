@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>공부 기록 내역 | AI 공부 플래너</title>
+  <script src="/auth-client.js"></script>
+  <script src="/goal-context.js"></script>
+  <style>
+    :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",sans-serif;color:#1c2a43;background:#f3f6fb;font-synthesis:none}
+    *{box-sizing:border-box}body{margin:0;line-height:1.55}button,input,select{font:inherit}button,a,select{touch-action:manipulation}
+    .wrap{max-width:1080px;margin:0 auto;padding:29px 20px 70px}
+    header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:20px}
+    .eyebrow{font-size:11px;letter-spacing:.1em;font-weight:800;color:#63748d;margin:0 0 5px}
+    h1{font-size:clamp(24px,4vw,31px);letter-spacing:-.035em;margin:0}header p.desc{margin:7px 0 0;color:#64748b;font-size:14px}
+    .actions{display:flex;flex-wrap:wrap;gap:8px}.button{display:inline-flex;justify-content:center;align-items:center;min-height:43px;gap:6px;border-radius:10px;padding:9px 14px;text-decoration:none;border:1px solid #cad5e5;color:#17409b;background:white;font-weight:750;font-size:13px;cursor:pointer}
+    .button.primary{background:#2563eb;color:white;border-color:#2563eb}.button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}
+    .panel,.stat,.entry{border:1px solid #e1e7f0;border-radius:14px;background:white;box-shadow:0 3px 14px rgba(28,49,78,.045)}
+    .panel{padding:20px;margin-bottom:18px}.filters{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:12px}
+    label{display:block;font-size:13px;font-weight:750;color:#34445b;margin-bottom:6px}
+    input,select{border:1px solid #ccd5e3;border-radius:9px;background:white;min-height:43px;width:100%;padding:8px 11px;min-width:0;color:#1f2d45}
+    .filter-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:13px}.filter-row .search{flex:1;min-width:180px}.hint{font-size:12px;color:#64748b}
+    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.stat{padding:17px 19px}
+    .stat span{display:block;font-size:12px;color:#64748b;font-weight:650}.stat strong{display:block;font-size:clamp(20px,3.5vw,27px);margin-top:5px;color:#17439c}
+    .heading{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin:24px 0 12px}.heading h2{margin:0;font-size:19px}.heading small{color:#64748b;font-size:12px}
+    .entry{padding:19px;margin:0 0 11px}.entry-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+    .date{font-size:13px;color:#64748b}.subject{font-size:12px;font-weight:800;border-radius:999px;background:#eaf1ff;color:#1d4ed8;padding:5px 10px}
+    .content{font-weight:800;font-size:16px;margin:12px 0 8px;overflow-wrap:anywhere}
+    .facts{display:flex;flex-wrap:wrap;gap:7px}.facts span{display:inline-block;font-size:12px;color:#43516a;background:#f4f7fb;border-radius:7px;padding:5px 8px}
+    .weak{font-size:13px;color:#51617a;margin:12px 0 0;overflow-wrap:anywhere}
+    .empty{border:1px dashed #b8c8dc;border-radius:14px;background:#fff;padding:35px 20px;text-align:center;color:#52627a}
+    #notice{font-size:13px;color:#475569;margin-top:12px;white-space:pre-wrap}#notice[data-kind="error"]{color:#b91c1c}
+    #loadMore{display:none;margin:16px auto 0}.footnote{font-size:12px;color:#64748b;margin:22px 0 0}
+    @media(max-width:760px){.wrap{padding:19px 12px 44px}.filters{grid-template-columns:repeat(2,minmax(0,1fr))}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:15px}}
+    @media(max-width:400px){.filters{grid-template-columns:1fr}.actions{width:100%}.actions .button{flex:1}}
+  </style>
+    <link rel="stylesheet" href="/ui-polish.css">
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <div>
+      <p class="eyebrow">MY STUDY WORKSPACE</p>
+      <h1>공부 기록 내역</h1>
+      <p class="desc">실제로 입력한 공부 기록만 확인합니다. 계획 시간이나 미입력을 완료 기록으로 계산하지 않습니다.</p>
+    </div>
+    <nav class="actions" aria-label="페이지 이동">
+      <a id="dashboardLink" class="button" href="/dashboard.html">← 대시보드</a>
+      <a id="newRecordLink" class="button primary" href="/study-log-form.html">+ 공부 기록 입력</a>
+    </nav>
+  </header>
+  <section class="panel" aria-label="기록 검색 필터">
+    <div class="filters">
+      <div><label for="goalFilter">학습 목표</label><select id="goalFilter"><option value="">목표를 불러오는 중...</option></select></div>
+      <div><label for="subjectFilter">과목</label><select id="subjectFilter" disabled><option value="">전체 과목</option></select></div>
+      <div><label for="dateFrom">시작 날짜</label><input id="dateFrom" type="date"></div>
+      <div><label for="dateTo">종료 날짜</label><input id="dateTo" type="date"></div>
+    </div>
+    <div class="filter-row">
+      <div class="search"><label for="keyword">공부 내용·어려운 개념 검색</label><input id="keyword" type="search" maxlength="100" placeholder="예: TCP/IP, 프로세스"></div>
+      <button type="button" id="refresh" class="button">새로고침</button>
+      <button type="button" id="clearFilters" class="button">검색 조건 초기화</button>
+    </div>
+    <div id="notice" role="status" aria-live="polite">기록을 불러오는 중...</div>
+  </section>
+  <section class="stats" aria-label="현재 검색 결과 통계">
+    <div class="stat"><span>공부 기록</span><strong id="count">-</strong></div>
+    <div class="stat"><span>기록된 공부시간</span><strong id="minutes">-</strong></div>
+    <div class="stat"><span>평균 이해도</span><strong id="understanding">-</strong></div>
+    <div class="stat"><span>평균 집중도</span><strong id="focus">-</strong></div>
+  </section>
+  <div class="heading"><h2>기록 목록</h2><small id="itemCount">-</small></div>
+  <div id="entries" aria-live="polite"></div>
+  <button id="loadMore" class="button" type="button">기록 더 보기</button>
+  <p class="footnote">이 화면은 조회 전용입니다. 공부 기록의 생성·수정·삭제나 AI API 호출을 수행하지 않습니다. 평균은 유효한 1~5점 입력이 있는 기록만 계산합니다.</p>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const state = {goals:[],subjects:[],logs:[],filtered:[],visible:30,goalId:''};
+  const pageSize=30;
+  const text=(id,value)=>{$(id).textContent=value;};
+  const number=(n)=>Number(n).toLocaleString('ko-KR');
+  const sameId=(a,b)=>String(a)===String(b);
+  const knownMinutes=v=>v!==null&&v!==undefined&&v!==''&&Number.isSafeInteger(Number(v))&&Number(v)>=0?Number(v):null;
+  const dayKey=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}/.test(v)?v.slice(0,10):'';
+  function linkPaths(){
+    const suffix=state.goalId?'?goalId='+encodeURIComponent(state.goalId):'';
+    $('dashboardLink').href='/dashboard.html'+suffix;
+    $('newRecordLink').href='/study-log-form.html'+suffix;
+  }
+  function notice(message,isError=false){text('notice',message);$('notice').dataset.kind=isError?'error':'info';}
+  async function getArray(path){
+    const response=await fetch(path,{cache:'no-store',credentials:'same-origin'});
+    if(!response.ok)throw new Error(path+' 조회 오류 (HTTP '+response.status+')');
+    const data=await response.json();
+    if(!Array.isArray(data))throw new Error(path+' 응답이 목록 형식이 아닙니다.');
+    return data;
+  }
+  function goalChanged(){
+    state.goalId=$('goalFilter').value;
+    if(state.goalId&&GoalContext.validId(state.goalId)){
+      GoalContext.select(state.goalId);
+      const url=new URL(location.href);url.searchParams.set('goalId',state.goalId);
+      history.replaceState(null,'',url.pathname+url.search);
+    }
+    linkPaths();
+    buildSubjects();
+    state.visible=pageSize;
+    render();
+  }
+  function buildSubjects(){
+    const selected=$('subjectFilter').value;
+    const choices=state.subjects.filter(s=>sameId(s.goalId,state.goalId)&&sameId(s.userId,1));
+    $('subjectFilter').replaceChildren(new Option('전체 과목',''));
+    choices.forEach(s=>$('subjectFilter').appendChild(new Option(s.subjectName||'과목 '+s.subjectId,String(s.subjectId))));
+    $('subjectFilter').disabled=!state.goalId;
+    if(choices.some(s=>sameId(s.subjectId,selected)))$('subjectFilter').value=selected;
+  }
+  function baseLogs(){
+    const ids=new Set(state.subjects.filter(s=>sameId(s.goalId,state.goalId)&&sameId(s.userId,1)).map(s=>String(s.subjectId)));
+    return state.logs.filter(l=>sameId(l.userId,1)&&ids.has(String(l.subjectId)));
+  }
+  function applyFilters(){
+    const subject=$('subjectFilter').value,from=$('dateFrom').value,to=$('dateTo').value,keyword=$('keyword').value.trim().toLocaleLowerCase('ko-KR');
+    const logs=baseLogs().filter(l=>(!subject||sameId(l.subjectId,subject))&&
+      (!from||dayKey(l.studyDate)>=from)&&(!to||dayKey(l.studyDate)<=to)&&
+      (!keyword||String(l.studyContent||'').toLocaleLowerCase('ko-KR').includes(keyword)||String(l.difficultTopic||'').toLocaleLowerCase('ko-KR').includes(keyword)));
+    logs.sort((a,b)=>String(b.studyDate||'').localeCompare(String(a.studyDate||''))||(Number(b.logId)||0)-(Number(a.logId)||0));
+    return logs;
+  }
+  function average(rows,key){
+    const values=rows.map(row=>Number(row[key])).filter(n=>Number.isInteger(n)&&n>=1&&n<=5);
+    if(!values.length)return '정보 없음';
+    return (values.reduce((a,b)=>a+b,0)/values.length).toFixed(1)+'/5';
+  }
+  function create(tag,klass,value){const el=document.createElement(tag);if(klass)el.className=klass;if(value!==undefined)el.textContent=String(value);return el;}
+  function renderEntry(row){
+    const card=create('article','entry');
+    const top=create('div','entry-top');
+    top.appendChild(create('span','date',String(row.studyDate||'날짜 미입력').slice(0,10)));
+    const subject=state.subjects.find(s=>sameId(s.subjectId,row.subjectId));
+    top.appendChild(create('span','subject',subject?.subjectName||'과목 '+row.subjectId));
+    card.appendChild(top);
+    card.appendChild(create('p','content',row.studyContent||'공부 내용 미입력'));
+    const facts=create('div','facts');
+    const minutes=knownMinutes(row.studyMinutes);
+    facts.appendChild(create('span','',minutes!==null?'학습 '+number(minutes)+'분':'공부시간 정보 없음'));
+    for(const [field,label] of [['understandingScore','이해도'],['focusScore','집중도'],['fatigueScore','피로도']]){
+      const n=Number(row[field]);
+      if(Number.isInteger(n)&&n>=1&&n<=5)facts.appendChild(create('span','',label+' '+n+'/5'));
+    }
+    if(Number.isInteger(Number(row.totalQuestions))&&Number(row.totalQuestions)>0){
+      facts.appendChild(create('span','', '문제 '+number(Number(row.totalQuestions))+'개'));
+    }
+    card.appendChild(facts);
+    if(row.difficultTopic)card.appendChild(create('p','weak','어려웠던 개념: '+row.difficultTopic));
+    return card;
+  }
+  function render(){
+    if(!state.goalId){
+      ['count','minutes','understanding','focus'].forEach(id=>text(id,'-'));
+      $('entries').replaceChildren(create('div','empty','학습 목표를 선택하면 해당 목표의 공부 기록을 표시합니다.'));
+      text('itemCount','목표를 선택해 주세요.');$('loadMore').style.display='none';return;
+    }
+    state.filtered=applyFilters();
+    text('count',number(state.filtered.length)+'개');
+    const available=state.filtered.map(row=>knownMinutes(row.studyMinutes)).filter(n=>n!==null);
+    const total=available.reduce((sum,minutes)=>sum+minutes,0);
+    text('minutes',available.length?number(total)+'분'+(available.length<state.filtered.length?' (일부 기록 시간 미입력)':''):'정보 없음');
+    text('understanding',average(state.filtered,'understandingScore'));
+    text('focus',average(state.filtered,'focusScore'));
+    const slice=state.filtered.slice(0,state.visible);
+    $('entries').replaceChildren(...(slice.length?slice.map(renderEntry):[create('div','empty','조건에 맞는 공부 기록이 없습니다. 과목이나 날짜 조건을 바꿔보세요.')]));
+    text('itemCount',number(slice.length)+'개 표시 / 전체 '+number(state.filtered.length)+'개');
+    $('loadMore').style.display=state.visible<state.filtered.length?'block':'none';
+  }
+  async function load(){
+    $('refresh').disabled=true;
+    notice('공부 기록과 목표를 불러오는 중...');
+    try{
+      const [goals,subjects,logs]=await Promise.all(['/goals','/subjects','/study-logs'].map(getArray));
+      state.goals=goals.filter(g=>sameId(g.userId,1));
+      state.subjects=subjects;
+      state.logs=logs;
+      const requested=new URLSearchParams(location.search).get('goalId')||GoalContext.id;
+      const selected=state.goals.some(g=>sameId(g.goalId,state.goalId))?state.goalId:
+        state.goals.some(g=>sameId(g.goalId,requested))?String(requested):'';
+      $('goalFilter').replaceChildren(new Option('학습 목표를 선택하세요',''));
+      state.goals.forEach(g=>$('goalFilter').appendChild(new Option((g.goalName||'학습 목표')+' (#'+g.goalId+')',String(g.goalId))));
+      $('goalFilter').value=selected;
+      state.goalId=selected;
+      linkPaths();buildSubjects();render();
+      notice('조회 완료 · 이 화면의 통계는 서버에서 확인된 실제 공부 기록만 합산합니다.');
+    }catch(err){
+      ['count','minutes','understanding','focus'].forEach(id=>text(id,'-'));
+      $('entries').replaceChildren(create('div','empty','기록을 불러오지 못했습니다. 로그인 상태와 서버 연결을 확인하세요.'));
+      text('itemCount','조회 실패');$('loadMore').style.display='none';
+      notice('조회 실패: '+(err.message||String(err)),true);
+    }finally{$('refresh').disabled=false;}
+  }
+  $('goalFilter').addEventListener('change',goalChanged);
+  for(const id of ['subjectFilter','dateFrom','dateTo','keyword']){
+    $(id).addEventListener(id==='keyword'?'input':'change',()=>{state.visible=pageSize;render();});
+  }
+  $('clearFilters').addEventListener('click',()=>{
+    ['dateFrom','dateTo','keyword'].forEach(id=>$(id).value='');$('subjectFilter').value='';state.visible=pageSize;render();
+  });
+  $('refresh').addEventListener('click',load);
+  $('loadMore').addEventListener('click',()=>{state.visible+=pageSize;render();});
+  load();
+})();
+</script>
+</body>
+</html>

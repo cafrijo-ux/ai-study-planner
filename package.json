@@ -1,0 +1,13 @@
+{
+  "name": "ai-study-planner-checks",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "test:web": "node src/test/browser/plan-calendar.cjs && node src/test/browser/final-audit.cjs",
+    "test:pwa": "node --test offline-pwa/tools/offline.test.cjs",
+    "scan:secrets": "node tools/scan-public.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

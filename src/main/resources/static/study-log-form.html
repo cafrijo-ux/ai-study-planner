@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <script src="/auth-client.js"></script>
+  <script src="/study-log-requests.js"></script>
+    <meta charset="UTF-8">
+    <title>공부 기록 입력</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root { color-scheme: light; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 28px 16px 48px;
+            background: #f3f6fb;
+            color: #17243b;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", Arial, sans-serif;
+            line-height: 1.55;
+            -webkit-text-size-adjust: 100%;
+        }
+        .container { width: 100%; max-width: 720px; margin: 0 auto; }
+        .page-header { padding: 6px 2px 22px; }
+        .eyebrow { margin: 0 0 6px; color: #63748d; font-size: 11px; letter-spacing: .12em; font-weight: 800; }
+        h1 { margin: 0; font-size: clamp(25px, 4vw, 32px); letter-spacing: -.035em; line-height: 1.25; }
+        .page-description { color: #64748b; margin: 8px 0 0; font-size: 14px; }
+        .page-nav { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 15px; }
+        .back-link { color: #1d4ed8; background: #fff; border: 1px solid #d5deec; border-radius: 9px; padding: 9px 12px; min-height: 44px; text-decoration: none; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; }
+        .page-nav .save-context { font-size: 12px; color: #718096; text-align: right; }
+        .form-section, .optional-panel, .submit-panel {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 22px;
+            margin: 0 0 15px;
+            box-shadow: 0 3px 12px rgba(17, 37, 71, .045);
+        }
+        .section-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 19px; }
+        .step-number { flex: none; width: 33px; height: 33px; border-radius: 10px; background: #e7efff; color: #2157d8; display: grid; place-items: center; font-size: 13px; font-weight: 800; }
+        h2 { margin: 0; font-size: 18px; letter-spacing: -.02em; color: #1644a3; }
+        .section-description { margin: 2px 0 0; color: #64748b; font-size: 12px; }
+        .field { min-width: 0; margin-bottom: 15px; }
+        .field:last-child { margin-bottom: 0; }
+        .field label { display: block; font-weight: 750; font-size: 14px; margin-bottom: 6px; color: #29374d; }
+        .optional-mark { color: #64748b; font-size: 12px; font-weight: 500; }
+        input, select, textarea {
+            display: block; width: 100%; min-width: 0;
+            padding: 11px 12px;
+            border-radius: 9px; border: 1px solid #cbd5e1;
+            background: #fff; color: #182337;
+            font-family: inherit; font-size: 16px; line-height: 1.45;
+            min-height: 47px;
+        }
+        textarea { min-height: 110px; resize: vertical; }
+        input::placeholder, textarea::placeholder { color: #94a3b8; }
+        input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible, summary:focus-visible {
+            outline: 3px solid #93c5fd; outline-offset: 2px; border-color: #2563eb;
+        }
+        .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); column-gap: 14px; }
+        .form-grid-three { grid-template-columns: repeat(3, minmax(0,1fr)); }
+        .subject-hint { margin: 8px 0 0; color: #64748b; font-size: 12px; line-height: 1.65; }
+        .selected-subject-info { margin-top: 11px; padding: 13px 15px; border-left: 4px solid #2563eb; border-radius: 9px; background: #f0f5ff; font-size: 13px; line-height: 1.75; color: #334155; overflow-wrap: anywhere; }
+        .selected-subject-info strong { color: #1d4ed8; }
+        .selected-subject-info .subject-detail-line { display: block; }
+        .optional-panel { padding: 0; }
+        .optional-panel > summary { cursor: pointer; list-style: none; padding: 19px 22px; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 61px; }
+        .optional-panel > summary::-webkit-details-marker { display: none; }
+        .optional-panel > summary::after { content: '⌄'; font-size: 24px; line-height: 1; color: #2563eb; transition: transform .15s; }
+        .optional-panel[open] > summary::after { transform: rotate(180deg); }
+        .optional-title { display:block; font-size: 16px; color:#1644a3; font-weight: 800; }
+        .optional-description { display:block; margin-top:3px; font-size:12px; color:#64748b; }
+        .optional-content { border-top:1px solid #e2e8f0; padding: 18px 22px 6px; }
+        .submit-panel { padding: 20px 22px; }
+        .save-button { display: block; width: 100%; min-height: 52px; padding: 12px 16px; border: 0; border-radius: 10px; background: #2563eb; color: #fff; font-family: inherit; font-size: 16px; line-height: 1.4; font-weight: 700; cursor: pointer; }
+        .save-button:hover { background: #1d4ed8; }
+        .save-button:active { background: #1e40af; }
+        .save-button:disabled { background: #93a9d1; cursor: wait; }
+        .result { margin-top: 14px; padding: 13px 14px; border-radius: 9px; background: #edf3ff; border:1px solid #d9e6ff; white-space: pre-wrap; font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
+        .result[data-state="success"] { background:#ecfdf5; border-color: #a7f3d0; color:#065f46; }
+        .result[data-state="error"] { background:#fff1f2; border-color: #fecdd3; color:#9f1239; }
+        .form-tip { color: #64748b; font-size: 12px; margin: 0 0 12px; }
+        @media (max-width: 620px) {
+            body { padding: 14px 10px 26px; }
+            .page-header { padding: 5px 3px 15px; }
+            .form-section, .submit-panel { padding: 17px 15px; border-radius: 12px; margin-bottom: 11px; }
+            .optional-panel { border-radius: 12px; margin-bottom: 11px; }
+            .optional-panel > summary { padding: 16px 15px; }
+            .optional-content { padding: 15px 15px 2px; }
+            .section-heading { margin-bottom: 16px; }
+            .field { margin-bottom: 14px; }
+            .form-grid-three { grid-template-columns: repeat(2, minmax(0,1fr)); }
+            .form-grid-three .field:last-child { grid-column: 1 / -1; }
+            .form-grid { column-gap: 10px; }
+            .page-nav .save-context { max-width: 56%; }
+        }
+        @media (max-width: 380px) {
+            .form-grid:not(.form-grid-three) { grid-template-columns: 1fr; }
+            .page-nav .save-context { font-size: 11px; }
+        }
+    </style>
+    <link rel="stylesheet" href="/ui-polish.css">
+</head>
+<body>
+
+<main class="container">
+    <header class="page-header">
+        <p class="eyebrow">MY STUDY WORKSPACE</p>
+        <h1>공부 기록 입력</h1>
+        <label for="currentGoalSelect">현재 사용할 목표</label>
+        <select id="currentGoalSelect"><option value="">목표를 선택하세요</option></select>
+        <p id="currentGoalNotice" role="status"></p>
+        <a id="completeGoalLink" hidden>과목 등록 완료하기</a>
+        <p class="page-description">공부한 내용을 기록하면 학습 분석과 AI 코칭에 반영돼요.</p>
+    </header>
+    <div class="page-nav">
+        <a class="back-link" href="/dashboard.html">← 대시보드 돌아가기</a>
+        <span class="save-context">선택한 과목과 날짜를 확인한 뒤 저장하세요.</span>
+    </div>
+
+    <section class="form-section" aria-labelledby="sectionBasicTitle">
+        <div class="section-heading"><span class="step-number" aria-hidden="true">01</span><div>
+            <h2 id="sectionBasicTitle">기본 학습 기록</h2>
+            <p class="section-description">어떤 과목을 얼마나 공부했는지 입력하세요.</p>
+        </div></div>
+        <div class="field">
+            <label for="subjectId">과목 선택</label>
+            <select id="subjectId" aria-describedby="subjectHint selectedSubjectInfo">
+                <option value="">과목을 불러오는 중...</option>
+            </select>
+            <p class="subject-hint" id="subjectHint">현재 목표의 과목이 먼저 표시됩니다. 과목 번호·목표명·시험일로 구분할 수 있어요.</p>
+            <div id="selectedSubjectInfo" class="selected-subject-info" aria-live="polite">과목 정보를 불러오는 중...</div>
+        </div>
+        <div class="form-grid">
+            <div class="field"><label for="studyDate">공부 날짜</label><input type="date" id="studyDate" required></div>
+            <div class="field"><label for="studyMinutes">공부 시간 (분)</label><input type="number" id="studyMinutes" inputmode="numeric" min="1" step="1" placeholder="예: 60" required></div>
+        </div>
+        <div class="field"><label for="studyContent">공부 내용</label><input type="text" id="studyContent" placeholder="예: 운영체제 스케줄링 복습" required></div>
+    </section>
+
+    <section class="form-section" aria-labelledby="sectionStatusTitle">
+        <div class="section-heading"><span class="step-number" aria-hidden="true">02</span><div>
+            <h2 id="sectionStatusTitle">학습 상태</h2>
+            <p class="section-description">오늘 공부의 이해도와 집중도를 기록하세요.</p>
+        </div></div>
+        <div class="form-grid form-grid-three">
+            <div class="field"><label for="understandingScore">이해도</label><select id="understandingScore">
+                <option value="1">1점 - 거의 이해 못함</option><option value="2">2점 - 부족함</option><option value="3">3점 - 보통</option><option value="4">4점 - 잘 이해함</option><option value="5">5점 - 완전히 이해함</option>
+            </select></div>
+            <div class="field"><label for="focusScore">집중도</label><select id="focusScore">
+                <option value="1">1점 - 매우 낮음</option><option value="2">2점 - 낮음</option><option value="3">3점 - 보통</option><option value="4">4점 - 높음</option><option value="5">5점 - 매우 높음</option>
+            </select></div>
+            <div class="field"><label for="fatigueScore">피로도</label><select id="fatigueScore">
+                <option value="1">1점 - 거의 없음</option><option value="2">2점 - 낮음</option><option value="3">3점 - 보통</option><option value="4">4점 - 높음</option><option value="5">5점 - 매우 높음</option>
+            </select></div>
+        </div>
+        <div class="form-grid">
+            <div class="field"><label for="studyMethod">공부 방식</label><select id="studyMethod">
+                <option value="개념 학습">개념 학습</option><option value="문제풀이">문제풀이</option><option value="오답정리">오답정리</option><option value="복습">복습</option><option value="암기">암기</option>
+            </select></div>
+            <div class="field"><label for="completed">완료 여부</label><select id="completed">
+                <option value="완료">완료</option><option value="부분 완료">부분 완료</option><option value="미완료">미완료</option>
+            </select></div>
+        </div>
+        <div class="field"><label for="difficultTopic">어려웠던 개념 <span class="optional-mark">(선택)</span></label>
+            <input type="text" id="difficultTopic" placeholder="예: 프로세스와 스레드 차이">
+        </div>
+    </section>
+
+    <details class="optional-panel" id="questionDetails">
+        <summary><span><span class="optional-title">문제 풀이·오답 기록</span>
+            <span class="optional-description">문제를 풀었다면 펼쳐서 입력하세요 · 선택 항목</span></span></summary>
+        <div class="optional-content">
+            <div class="form-grid form-grid-three">
+                <div class="field"><label for="totalQuestions">전체 문제 수</label><input type="number" id="totalQuestions" min="0" step="1" inputmode="numeric" placeholder="예: 10"></div>
+                <div class="field"><label for="correctCount">맞은 문제 수</label><input type="number" id="correctCount" min="0" step="1" inputmode="numeric" placeholder="예: 7"></div>
+                <div class="field"><label for="wrongCount">틀린 문제 수</label><input type="number" id="wrongCount" min="0" step="1" inputmode="numeric" placeholder="예: 3"></div>
+            </div>
+            <div class="field"><label for="wrongReason">오답 원인</label><select id="wrongReason">
+                <option value="개념 부족">개념 부족</option><option value="계산 실수">계산 실수</option><option value="문제 해석 실패">문제 해석 실패</option><option value="암기 부족">암기 부족</option><option value="시간 부족">시간 부족</option>
+            </select></div>
+        </div>
+    </details>
+
+    <section class="form-section" aria-labelledby="sectionMemoTitle">
+        <div class="section-heading"><span class="step-number" aria-hidden="true">03</span><div>
+            <h2 id="sectionMemoTitle">추가 메모</h2>
+            <p class="section-description">공부하면서 느낀 점을 자유롭게 남겨보세요.</p>
+        </div></div>
+        <div class="field"><label for="memo">메모 <span class="optional-mark">(선택)</span></label>
+            <textarea id="memo" placeholder="오늘 공부하면서 느낀 점이나 어려웠던 점"></textarea>
+        </div>
+    </section>
+
+    <section class="submit-panel" aria-label="공부 기록 저장">
+        <p class="form-tip">저장된 내용은 학습 분석과 AI 코칭에 사용됩니다.</p>
+        <button type="button" class="save-button" id="saveStudyLogButton" onclick="saveStudyLog()">공부 기록 저장</button>
+        <div class="result" id="result" role="status" aria-live="polite">저장 결과가 여기에 표시됩니다.</div>
+    </section>
+</main>
+
+<script src="/goal-context.js"></script>
+<script>
+    let subjectInfoById = new Map();
+    const localNow = new Date();
+    document.getElementById("studyDate").value = new Date(
+        localNow.getTime() - localNow.getTimezoneOffset() * 60000
+    ).toISOString().slice(0, 10);
+    document.getElementById('saveStudyLogButton').disabled = true;
+    initializeGoalPicker().then(async ready => {
+        if (ready) {
+            await loadSubjects();
+            try {const pending=StudyLogRequests.pending(GoalContext.id);if(pending)showPendingStudyRequest();else document.getElementById('saveStudyLogButton').disabled=subjectInfoById.size===0;} catch(_){studyLogWriteLocked=true;document.getElementById('result').textContent='요청 키 보관 상태를 확인할 수 없어 저장을 차단합니다. 기존 기록을 확인하세요.';}
+        }
+    });
+
+    // 선택지는 이전 학습 목표의 과목도 유지하되, 현재 목표의 과목을 먼저 배치합니다.
+    // 학습 목표별 정보는 /goals에서 조회하며, 기존 저장 API에 보내는 값은 subjectId 그대로입니다.
+    function numericId(value) {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : -1;
+    }
+
+    function formatExamDate(value) {
+        if (!value) return "시험일 미설정";
+        const text = String(value);
+        // Java LocalDate는 보통 YYYY-MM-DD 형태로 전송됩니다.
+        if (/^\d{4}-\d{2}-\d{2}/.test(text)) {
+            return "시험 " + text.slice(0, 10);
+        }
+        return "시험 " + text;
+    }
+
+    function showSelectedSubjectInfo() {
+        const select = document.getElementById("subjectId");
+        const detail = document.getElementById("selectedSubjectInfo");
+        const selected = subjectInfoById.get(String(select.value));
+        detail.replaceChildren();
+
+        if (!selected) {
+            detail.textContent = "과목을 선택하면 학습 목표와 시험일을 확인할 수 있습니다.";
+            return;
+        }
+
+        const subject = selected.subject;
+        const goal = selected.goal;
+        const currentLabel = selected.isCurrent ? "현재 학습 목표" :
+            selected.currentGoalKnown ? "이전 학습 목표" : "학습 목표 상태 확인 불가";
+        const lines = [
+            currentLabel + " · 과목 번호 " + subject.subjectId,
+            "과목명: " + (subject.subjectName || "이름 없음"),
+            "학습 목표: " + (goal ? (goal.goalName || "목표명 없음") : "목표 정보를 확인할 수 없음"),
+            "시험일: " + (goal && goal.examDate ? String(goal.examDate).slice(0, 10) : "미설정 또는 확인 불가"),
+            "난이도: " + (subject.difficulty || "미설정") + " · 중요도: " + (subject.priorityLevel || "미설정")
+        ];
+        lines.forEach((line, index) => {
+            const row = document.createElement(index === 0 ? "strong" : "span");
+            row.className = "subject-detail-line";
+            row.textContent = line;
+            detail.appendChild(row);
+        });
+    }
+
+    async function loadSubjects() {
+        const subjectSelect = document.getElementById("subjectId");
+        const detail = document.getElementById("selectedSubjectInfo");
+        subjectSelect.disabled = true;
+        subjectInfoById = new Map();
+
+        try {
+            // 목표 API가 일시적으로 실패해도 번호를 붙인 과목 목록은 표시합니다.
+            const [subjectResult, goalResult] = await Promise.allSettled([
+                GoalContext.scopedFetch("/subjects").then(response => {
+                    if (!response.ok) throw new Error("과목 조회 오류");
+                    return response.json();
+                }),
+                fetch("/goals").then(response => {
+                    if (!response.ok) throw new Error("목표 조회 오류");
+                    return response.json();
+                })
+            ]);
+
+            if (subjectResult.status !== "fulfilled" || !Array.isArray(subjectResult.value)) {
+                throw new Error("과목 목록을 불러오지 못했습니다.");
+            }
+
+            const subjects = subjectResult.value;
+            const goalsAvailable = goalResult.status === "fulfilled" && Array.isArray(goalResult.value);
+            const goals = goalsAvailable ? goalResult.value : [];
+            const goalsById = new Map(goals.map(goal => [String(goal.goalId), goal]));
+            const currentGoal = goals.find(goal => String(goal.goalId) === GoalContext.id) || null;
+            const currentGoalId = currentGoal ? String(currentGoal.goalId) : null;
+            const previousValue = subjectSelect.value;
+
+            subjectSelect.replaceChildren();
+            if (subjects.length === 0) {
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = "등록된 과목이 없습니다. 먼저 학습 목표를 설정하세요.";
+                subjectSelect.appendChild(option);
+                detail.textContent = "학습 목표 설정 화면에서 과목을 등록해 주세요.";
+                return;
+            }
+
+            // 현재 목표 우선, 같은 그룹에서는 과목 번호 내림차순.
+            const sorted = [...subjects].sort((a, b) => {
+                const aCurrent = currentGoalId !== null && String(a.goalId) === currentGoalId;
+                const bCurrent = currentGoalId !== null && String(b.goalId) === currentGoalId;
+                if (aCurrent !== bCurrent) return aCurrent ? -1 : 1;
+                return numericId(b.subjectId) - numericId(a.subjectId);
+            });
+
+            for (const subject of sorted) {
+                const goal = goalsById.get(String(subject.goalId));
+                const isCurrent = currentGoalId !== null && String(subject.goalId) === currentGoalId;
+                const label = isCurrent ? "현재" : currentGoalId !== null ? "이전" : "목표 미확인";
+                const goalName = goal ? (goal.goalName || "목표명 없음") : "목표 정보 없음";
+
+                const option = document.createElement("option");
+                option.value = String(subject.subjectId);
+                option.textContent = "[" + label + " · " + subject.subjectId + "번] " +
+                    (subject.subjectName || "과목명 없음") + " | " + goalName + " | " +
+                    (goal ? formatExamDate(goal.examDate) : "시험일 확인 불가");
+                subjectSelect.appendChild(option);
+
+                subjectInfoById.set(String(subject.subjectId), {
+                    subject, goal, isCurrent, currentGoalKnown: currentGoalId !== null
+                });
+            }
+
+            // 다른 화면에서 넘어왔을 때 지정한 과목이 있다면 우선 사용하고,
+            // 별도 지정이 없다면 첫 번째(현재 학습 목표) 과목이 선택됩니다.
+            const params = new URLSearchParams(window.location.search);
+            const requestedSubjectId = params.get("subjectId");
+            if (requestedSubjectId && subjectInfoById.has(requestedSubjectId)) {
+                subjectSelect.value = requestedSubjectId;
+            } else if (previousValue && subjectInfoById.has(previousValue)) {
+                subjectSelect.value = previousValue;
+            }
+            showSelectedSubjectInfo();
+        } catch (error) {
+            subjectSelect.replaceChildren();
+            const option = document.createElement("option");
+            option.value = "";
+            option.textContent = "과목 목록을 불러오지 못했습니다.";
+            subjectSelect.appendChild(option);
+            detail.textContent = "서버 연결을 확인한 뒤 새로고침해 주세요.";
+        } finally {
+            subjectSelect.disabled = false;
+        }
+    }
+
+    document.getElementById("subjectId").addEventListener("change", showSelectedSubjectInfo);
+
+    function addNewStudyButton(){
+        const b=document.createElement('button');b.type='button';b.id='newStudyLogButton';b.textContent='새 공부 기록 입력';
+        b.addEventListener('click',()=>{studyLogWriteLocked=false;document.getElementById('saveStudyLogButton').disabled=false;document.getElementById('saveStudyLogButton').textContent='공부 기록 저장';for(const id of ['studyMinutes','studyContent','memo'])document.getElementById(id).value='';document.getElementById('result').textContent='새 기록입니다. 저장하면 새 요청 키를 사용합니다.';});
+        document.getElementById('result').appendChild(b);
+    }
+    function addStudyRequestLookup(){
+        if(document.getElementById('checkStudyLogRequest'))return;
+        const b=document.createElement('button');b.type='button';b.id='checkStudyLogRequest';b.textContent='저장 결과 확인 (GET)';
+        b.addEventListener('click',async()=>{b.disabled=true;try{const r=await StudyLogRequests.lookup(GoalContext.id);if(r.state==='COMPLETED'){const box=document.getElementById('result');box.dataset.state='success';box.textContent='서버에 저장된 기록을 GET으로 확인했습니다. 저장 번호: '+r.result.logId;addNewStudyButton();}else{document.getElementById('result').appendChild(document.createTextNode(' 커밋된 결과 미확인. 진행 중/롤백 여부는 단정하지 않습니다. 재전송하지 않았습니다.'));}}catch(error){document.getElementById('result').appendChild(document.createTextNode(' '+error.message));}finally{if(b.isConnected)b.disabled=false;}});
+        document.getElementById('result').appendChild(b);
+    }
+    function showPendingStudyRequest(){
+        studyLogWriteLocked=true;document.getElementById('saveStudyLogButton').disabled=true;document.getElementById('saveStudyLogButton').textContent='기존 저장 결과 확인 필요';
+        const box=document.getElementById('result');box.dataset.state='uncertain';box.textContent='이 목표에 미확인 요청 키가 보관돼 있습니다. 새 POST를 차단했습니다. 서버 영속 보호는 별도 활성화가 필요합니다. ';
+        const a=document.createElement('a');a.id='verifyStudyLogHistoryLink';a.href='/study-log-history.html?goalId='+encodeURIComponent(GoalContext.id);a.textContent='공부 기록 목록 확인';box.appendChild(a);addStudyRequestLookup();
+    }
+    let studyLogWriteLocked = false;
+    async function saveStudyLog() {
+        const resultBox = document.getElementById("result");
+        const saveButton = document.getElementById("saveStudyLogButton");
+        if (saveButton.disabled || studyLogWriteLocked) return;
+        resultBox.dataset.state = "";
+
+        const selectedSubjectId = document.getElementById("subjectId").value;
+        const studyDate = document.getElementById("studyDate").value;
+        const studyMinutes = Number(document.getElementById("studyMinutes").value);
+        const studyContent = document.getElementById("studyContent").value.trim();
+        const totalQuestions = Number(document.getElementById("totalQuestions").value);
+        const correctCount = Number(document.getElementById("correctCount").value);
+        const wrongCount = Number(document.getElementById("wrongCount").value);
+
+        if (!subjectInfoById.has(selectedSubjectId) ||
+            String(subjectInfoById.get(selectedSubjectId).subject.goalId) !== GoalContext.id) {
+            resultBox.innerText = "저장 실패\n과목을 먼저 선택해야 합니다.";
+            return;
+        }
+
+        if (studyDate === "") {
+            resultBox.innerText = "저장 실패\n공부 날짜를 선택해야 합니다.";
+            return;
+        }
+
+        if (!Number.isInteger(studyMinutes) || studyMinutes < 1 || studyMinutes > 2147483647) {
+            resultBox.innerText = "저장 실패\n공부 시간은 1분 이상의 정수로 입력해야 합니다.";
+            return;
+        }
+
+        if (studyContent === "") {
+            resultBox.innerText = "저장 실패\n공부 내용을 입력해야 합니다.";
+            return;
+        }
+
+        if ([totalQuestions, correctCount, wrongCount].some(value =>
+            !Number.isInteger(value) || value < 0 || value > 2147483647)) {
+            resultBox.innerText = "저장 실패\n문제 수, 맞은 문제 수, 틀린 문제 수는 0 이상의 정수로 입력해야 합니다.";
+            return;
+        }
+
+        if (correctCount + wrongCount > totalQuestions) {
+            resultBox.innerText = "저장 실패\n맞은 문제 수와 틀린 문제 수의 합은 전체 문제 수보다 클 수 없습니다.";
+            return;
+        }
+
+        const data = {
+            userId: 1,
+            subjectId: Number(selectedSubjectId),
+            studyDate: studyDate,
+            studyMinutes: studyMinutes,
+            studyContent: studyContent,
+            understandingScore: Number(document.getElementById("understandingScore").value),
+            focusScore: Number(document.getElementById("focusScore").value),
+            fatigueScore: Number(document.getElementById("fatigueScore").value),
+            studyMethod: document.getElementById("studyMethod").value,
+            totalQuestions: totalQuestions,
+            correctCount: correctCount,
+            wrongCount: wrongCount,
+            wrongReason: document.getElementById("wrongReason").value,
+            difficultTopic: document.getElementById("difficultTopic").value,
+            completed: document.getElementById("completed").value,
+            memo: document.getElementById("memo").value
+        };
+
+        saveButton.disabled = true;
+        saveButton.textContent = "저장 중...";
+        resultBox.innerText = "저장 요청 중입니다...";
+
+        let requestKey;
+        try {
+            const reserved=await StudyLogRequests.reserve(GoalContext.id);
+            if(reserved.existing){showPendingStudyRequest();return;}
+            requestKey=reserved.key;
+        } catch(error){studyLogWriteLocked=true;saveButton.disabled=true;resultBox.dataset.state='uncertain';resultBox.textContent=error.message||'요청 키 보관 실패. 전송하지 않았습니다.';return;}
+        let correctionAllowed = false;
+        return fetch(GoalContext.url("/study-logs"), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json", "Idempotency-Key": requestKey
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => {
+                correctionAllowed = [400, 401, 403, 404, 422].includes(response.status);
+                return GoalContext.readResponse(response);
+            })
+            .then(async result => {
+                if (!result || !Number.isSafeInteger(result.logId) || result.logId <= 0 ||
+                    result.subjectId !== data.subjectId || result.studyDate !== data.studyDate ||
+                    result.studyMinutes !== data.studyMinutes || typeof result.studyContent !== "string") {
+                    throw new Error("저장 응답을 확인할 수 없습니다. 중복 입력을 막기 위해 실제 저장 여부를 확인한 뒤 다시 시도하세요.");
+                }
+
+                await StudyLogRequests.complete(GoalContext.id, requestKey);
+                studyLogWriteLocked = true;
+                resultBox.dataset.state = "success";
+                resultBox.innerText =
+                    "공부 기록이 저장되었습니다.\n\n" +
+                    "저장 번호: " + result.logId + "\n" +
+                    "공부 날짜: " + result.studyDate + "\n" +
+                    "공부 시간: " + result.studyMinutes + "분\n" +
+                    "공부 내용: " + result.studyContent;
+                const link = document.createElement("a");
+                link.id = "savedLogDashboardLink";
+                link.href = "/dashboard.html?goalId=" + encodeURIComponent(GoalContext.id);
+                link.textContent = " 이 목표의 최신 대시보드 확인";
+                resultBox.appendChild(link);
+                addNewStudyButton();
+            })
+            .catch(async error => {
+                studyLogWriteLocked = !correctionAllowed;
+                if(correctionAllowed)try{await StudyLogRequests.complete(GoalContext.id,requestKey);}catch(_){studyLogWriteLocked=true;}
+                resultBox.dataset.state = studyLogWriteLocked ? "uncertain" : "error";
+                resultBox.innerText =
+                    "저장 결과 확인 실패\n" + (error instanceof TypeError
+                        ? "연결 또는 응답 수신에 실패했습니다. 입력은 유지됩니다. 중복 입력 전에 실제 저장 여부를 확인하세요."
+                        : error.message);
+                if (studyLogWriteLocked) {
+                    const link = document.createElement("a");
+                    link.id = "verifyStudyLogHistoryLink";
+                    link.href = "/study-log-history.html?goalId=" + encodeURIComponent(GoalContext.id);
+                    link.textContent = " 전체 공부 기록에서 저장 여부 확인 (재전송 없음)";
+                    resultBox.appendChild(link);
+                    addStudyRequestLookup();
+                }
+            })
+            .finally(() => {
+                saveButton.disabled = studyLogWriteLocked;
+                saveButton.textContent = resultBox.dataset.state === "success" ? "저장 완료" : studyLogWriteLocked ? "저장 결과 확인 필요" : "공부 기록 저장";
+                // 휴대폰에서 결과를 찾기 쉽게 저장 결과 영역으로 이동합니다.
+                if (window.matchMedia("(max-width: 620px)").matches) {
+                    resultBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }
+            });
+    }
+</script>
+</body>
+</html>

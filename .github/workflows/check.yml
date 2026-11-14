@@ -1,0 +1,29 @@
+name: Offline-safe checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  java:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Test and package
+        shell: pwsh
+        run: .\gradlew.bat --no-daemon test connectorTest bootJar
+  browser:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright install chromium
+      - run: npm run test:web
+        env:
+          BROWSER_CHANNEL: chromium
+      - run: npm run test:pwa

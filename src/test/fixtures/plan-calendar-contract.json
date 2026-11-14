@@ -1,0 +1,30 @@
+{
+  "description": "PC/Android 공통 Mock 계약 · 실제 MySQL/AI 자료 아님",
+  "palette": ["#72a7ff", "#b39aff", "#6ad7aa", "#f2b56b", "#eb92c3", "#65ccdc", "#c6ca71", "#ee9690"],
+  "goalId": 1,
+  "month": "2026-11",
+  "plans": [{
+    "goalId": 1,
+    "planDate": "2026-11-01",
+    "scheduleDate": "2026-11-01",
+    "saved": true,
+    "planSaved": true,
+    "planStatus": "FINAL",
+    "studyMinutes": 200,
+    "carryoverMinutes": 9,
+    "newStudyMinutes": 191,
+    "carryoverTotalPendingMinutes": 60,
+    "isScheduleValid": true,
+    "hasConflict": false,
+    "subjectPlans": [
+      {"subjectId": 1, "subjectName": "운영체제", "studyMinutes": 50, "carryoverMinutes": 9, "newStudyMinutes": 41},
+      {"subjectId": 2, "subjectName": "네트워크", "studyMinutes": 150, "carryoverMinutes": 0, "newStudyMinutes": 150}
+    ],
+    "timeSlots": [
+      {"subjectId": 1, "subjectName": "운영체제", "type": "공부", "allocationType": "CATCHUP", "activity": "취약 개념 보충", "minutes": 9, "startTime": "2026-11-01 09:00", "endTime": "2026-11-01 09:09"},
+      {"subjectId": 1, "subjectName": "운영체제", "type": "공부", "allocationType": "NEW", "activity": "문제풀이", "minutes": 41, "startTime": "2026-11-01 09:09", "endTime": "2026-11-01 09:50"},
+      {"subjectId": null, "subjectName": null, "type": "휴식", "allocationType": "BREAK", "activity": "휴식", "minutes": 10, "startTime": "2026-11-01 09:50", "endTime": "2026-11-01 10:00"},
+      {"subjectId": 2, "subjectName": "네트워크", "type": "공부", "allocationType": "NEW", "activity": "개념 복습", "minutes": 150, "startTime": "2026-11-01 10:00", "endTime": "2026-11-01 12:30"}
+    ]
+  }]
+}

@@ -1,0 +1,2645 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <script src="/auth-client.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AI 공부 플래너 대시보드</title>
+    <link rel="stylesheet" href="/study-plan-calendar.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            width: 950px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #222;
+        }
+
+        .card {
+            background-color: white;
+            padding: 22px;
+            margin-top: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: #2563eb;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .info-box, .stat-box {
+            background-color: #eef2ff;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .stat-box {
+            text-align: center;
+        }
+
+        .label {
+            font-size: 14px;
+            color: #555;
+        }
+
+        .value {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 8px;
+            color: #111;
+        }
+
+        .coaching-box {
+            background-color: #f9fafb;
+            padding: 15px;
+            border-left: 5px solid #2563eb;
+            margin-top: 12px;
+            border-radius: 8px;
+        }
+
+        .button-area {
+            margin-top: 25px;
+            text-align: center;
+        }
+
+        button, a {
+            display: inline-block;
+            padding: 12px 18px;
+            margin: 5px;
+            background-color: #2563eb;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover, a:hover {
+            background-color: #1d4ed8;
+        }
+
+        /* 15번 카드: Gemini 공부 기록 요약 (버튼을 누를 때만 호출) */
+        .study-summary-description {
+            margin: 0 0 14px;
+            color: #4b5563;
+            line-height: 1.6;
+        }
+        .study-summary-action {
+            margin-top: 14px;
+        }
+        #studySummaryButton:disabled {
+            background-color: #94a3b8;
+            cursor: wait;
+        }
+        #studySummaryResponse {
+            min-height: 44px;
+        }
+
+        /* 14번 카드: 실제 LLM 답변 전용 마크다운 스타일 */
+        .llm-markdown {
+            color: #1f2937;
+            font-size: 15px;
+            line-height: 1.8;
+            overflow-wrap: anywhere;
+        }
+        .llm-markdown h2, .llm-markdown h3, .llm-markdown h4 {
+            margin: 20px 0 8px;
+            color: #1e40af;
+            line-height: 1.45;
+        }
+        .llm-markdown h2 { font-size: 20px; }
+        .llm-markdown h3 { font-size: 18px; }
+        .llm-markdown h4 { font-size: 16px; }
+        .llm-markdown p { margin: 8px 0 12px; }
+        .llm-markdown ul, .llm-markdown ol {
+            padding-left: 24px;
+            margin: 8px 0 14px;
+        }
+        .llm-markdown li { margin: 5px 0; }
+        .llm-markdown li::marker { color: #2563eb; }
+        .llm-markdown strong { color: #111827; }
+        .llm-markdown code {
+            padding: 1px 5px;
+            background: #e9eef9;
+            border-radius: 4px;
+            font-size: 0.92em;
+        }
+        .llm-markdown blockquote {
+            border-left: 3px solid #93c5fd;
+            padding-left: 12px;
+            margin: 12px 0;
+            color: #4b5563;
+        }
+
+/* 16번 카드: 실제 시간대별 공부·휴식 일정 */
+.schedule-explanation { color: #4b5563; line-height: 1.6; margin: 4px 0 14px; }
+.schedule-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 15px 0 12px;
+}
+.schedule-field { display: flex; flex-direction: column; gap: 7px; }
+.schedule-field label { font-size: 14px; font-weight: 700; color: #334155; }
+.schedule-field input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 11px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #0f172a;
+    font-size: 15px;
+}
+#scheduleBuildButton:disabled, #scheduleSaveButton:disabled { background: #94a3b8; cursor: wait; }
+.schedule-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.schedule-actions button { margin: 6px 0; }
+#scheduleSaveButton { background-color: #0f766e; }
+#scheduleSaveButton:hover:not(:disabled) { background-color: #115e59; }
+#schedulePersistenceStatus { line-height: 1.6; margin: 8px 0 10px; font-size: 14px; color: #475569; }
+#schedulePersistenceStatus.schedule-saved { color: #166534; }
+#schedulePersistenceStatus.schedule-unsaved { color: #92400e; }
+#schedulePersistenceStatus.schedule-save-error { color: #b91c1c; }
+.schedule-subnote { font-size: 13px; color: #64748b; margin: 8px 0; }
+#scheduleStatus { margin-top: 14px; line-height: 1.6; white-space: pre-wrap; }
+#scheduleStatus.schedule-success { color: #166534; }
+#scheduleStatus.schedule-error { color: #b91c1c; }
+.schedule-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.schedule-metric { background: #eef2ff; padding: 14px; border-radius: 10px; }
+.schedule-metric .metric-value { margin-top: 6px; font-size: 19px; font-weight: 700; overflow-wrap: anywhere; }
+.schedule-total-bar { display: flex; height: 16px; overflow: hidden; border-radius: 8px; margin: 16px 0 9px; background: #e2e8f0; }
+.schedule-total-bar .study { background: #2563eb; }
+.schedule-total-bar .rest { background: #94a3b8; }
+.schedule-total-bar .busy { background: #eab308; }
+.schedule-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; color: #475569; }
+.schedule-legend span::before { content: ''; display: inline-block; width: 10px; height: 10px; margin-right: 5px; border-radius: 3px; background: #2563eb; }
+.schedule-legend .rest::before { background: #94a3b8; }
+.schedule-legend .busy::before { background: #eab308; }
+.schedule-timeline { margin-top: 14px; display: grid; gap: 9px; }
+.schedule-slot { display: grid; grid-template-columns: 105px minmax(0, 1fr) 56px; align-items: center; gap: 12px; border-radius: 8px; padding: 12px; border-left: 4px solid #2563eb; background: #eff6ff; }
+.schedule-slot.rest { background: #f1f5f9; border-left-color: #94a3b8; }
+.schedule-slot.busy { background: #fef9c3; border-left-color: #eab308; }
+.schedule-slot .slot-clock { font-size: 13px; font-weight: 700; white-space: nowrap; }
+.schedule-slot .slot-title { font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
+.schedule-slot .slot-subtitle { color: #475569; font-size: 13px; margin-top: 3px; overflow-wrap: anywhere; }
+.schedule-slot .slot-minutes { text-align: right; font-size: 13px; white-space: nowrap; color: #475569; }
+@media(max-width: 650px) {
+    .schedule-metrics { grid-template-columns: 1fr; }
+    .schedule-slot { grid-template-columns: 85px minmax(0, 1fr); gap: 8px; }
+    .schedule-slot .slot-minutes { grid-column: 2; text-align: left; }
+}
+
+        /* 5개 메뉴 화면: 기존 16개 카드의 HTML, id, 저장 동작은 그대로 사용 */
+        :root { color-scheme: light; }
+        * { box-sizing: border-box; }
+        body { padding: 24px 18px 40px; color: #0f172a; }
+        .container { width: 100%; max-width: 1120px; }
+        .dashboard-header { padding: 8px 0 13px; }
+        .goal-picker { margin: 0 0 16px; padding: 16px 20px; background: #fff; border: 1px solid #dce5f1; border-radius: 14px; }
+        .goal-picker label { font-weight: 700; margin-right: 10px; }
+        .goal-picker select { max-width: 100%; padding: 8px 12px; border: 1px solid #cbd7e8; border-radius: 8px; font: inherit; }
+        .goal-picker p { color: #536781; line-height: 1.6; }
+        .dashboard-header h1 { text-align:left; margin: 5px 0 8px; font-size: clamp(26px, 4vw, 34px); letter-spacing: -.035em; }
+        .dashboard-eyebrow { font-size: 11px; letter-spacing: .14em; color: #64748b; font-weight: 800; margin:0; }
+        .dashboard-subtitle { margin: 0; color: #64748b; font-size: 14px; line-height: 1.6; }
+        .dashboard-nav { display: flex; align-items:center; gap: 8px; overflow-x: auto; padding: 9px; background: white; border: 1px solid #e2e8f0; border-radius: 14px; position: sticky; top: 8px; z-index: 10; box-shadow: 0 5px 20px rgba(15,23,42,.06); scrollbar-width: thin; }
+        .dashboard-nav .nav-button { flex:1 0 auto; margin: 0; padding: 11px 13px; background: transparent; color: #475569; white-space: nowrap; border-radius: 9px; font-weight: 700; font-size: 14px; transition: background .15s,color .15s; }
+        .dashboard-nav .nav-button:hover { background:#eff6ff; color:#1d4ed8; }
+        .dashboard-nav .nav-button.is-active { background:#2563eb; color:white; }
+        .dashboard-nav .nav-button:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+        .page-title-row { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin: 24px 0 1px; }
+        .page-title-row h2 { font-size:24px; margin: 0 0 7px; }
+        .page-title-row p { margin: 0; color:#64748b; line-height:1.6; font-size:14px; }
+        .refresh-tab-button { margin:0; padding:9px 13px; color:#1d4ed8; background:#dbeafe; font-size:13px; }
+        .refresh-tab-button:hover { background:#bfdbfe; }
+        .dashboard-quick-links { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 4px; }
+        .dashboard-quick-links a { margin:0; background:white; border:1px solid #cbd5e1; color:#1d4ed8; padding:11px 14px; font-size:13px; font-weight:700; }
+        .dashboard-quick-links a:hover { background:#eff6ff; }
+        .card { margin-top: 16px; padding: 23px; border: 1px solid #e2e8f0; box-shadow: 0 3px 10px rgba(15,23,42,.045); }
+        .card[data-section] { display:none; }
+        .card[data-section].is-visible { display:block; }
+        .dashboard-quick-links[data-section]:not(.is-visible) { display: none; }
+        .grid { grid-template-columns:repeat(3, minmax(0,1fr)); }
+        .grid > * { min-width:0; }
+        .value, .coaching-box, .info-box, .stat-box { overflow-wrap: anywhere; }
+        .coaching-box p { white-space: pre-wrap; line-height: 1.65; }
+        .button-area { margin-top: 22px; }
+        .today-progress { margin-top:20px; background:#f8fafc; padding:19px; border:1px solid #e2e8f0; border-radius:12px; }
+        .today-progress-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+        .today-progress-header h3 { margin:0 0 6px; font-size:16px; }
+        .today-progress-header p { margin:0; color:#64748b; font-size:13px; }
+        .today-progress-rate { font-size:27px; font-weight:800; color:#2563eb; white-space:nowrap; }
+        .today-progress-track { height:13px; background:#e2e8f0; overflow:hidden; border-radius:20px; margin:16px 0 11px; }
+        .today-progress-fill { height:100%; background:linear-gradient(90deg, #60a5fa, #2563eb); transition:width .25s; border-radius:20px; }
+        .today-progress-details { color:#475569; font-size:13px; line-height:1.7; }
+        .muted-text { color:#64748b; font-size:14px; line-height:1.6; }
+        .preview-result { margin-top:14px; line-height:1.8; white-space:pre-wrap; color:#334155; }
+        #reschedulePreviewButton:disabled, #realLlmGenerateButton:disabled { background:#94a3b8; cursor:wait; }
+        @media(max-width: 800px) {
+            .grid { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+            .schedule-metrics { grid-template-columns:repeat(3, minmax(0,1fr)); }
+        }
+        @media(max-width: 560px) {
+            body { padding:12px 10px 30px; }
+            .dashboard-nav { top: 0; border-radius: 10px; }
+            .dashboard-nav .nav-button { flex:0 0 auto; padding:11px 13px; }
+            .card { padding:16px; }
+            .grid { grid-template-columns:1fr; gap:10px; }
+            .page-title-row h2 { font-size:21px; }
+            .dashboard-quick-links a { flex:1 1 45%; text-align:center; }
+            .schedule-metrics { grid-template-columns: 1fr; }
+            .schedule-slot { grid-template-columns:85px minmax(0,1fr); }
+            .schedule-slot .slot-minutes { grid-column:2; text-align:left; }
+            .today-progress-rate { font-size:22px; }
+        }
+    
+        /* AI 코칭 카드 내부 GPT 패널: 접힌 상태로 시작하여 스크롤 증가 최소화 */
+        .gpt-weekly-panel { margin-top:18px; border:1px solid #cbd5e1; border-radius:10px; padding:13px 15px; background:#f8fafc; }
+        .gpt-weekly-panel > summary { color:#1e40af; cursor:pointer; font-size:16px; font-weight:700; }
+        .gpt-weekly-panel[open] > summary { margin-bottom:12px; }
+        .gpt-weekly-panel #gptWeeklyStatus { margin:10px 0; font-size:14px; white-space:pre-wrap; color:#334155; }
+        .gpt-weekly-panel .schedule-actions button { max-width:100%; white-space:normal; }
+        .gpt-prompt-details { margin:12px 0; }
+        .gpt-prompt-details summary { cursor:pointer; color:#334155; font-size:14px; font-weight:700; }
+        #gptWeeklyGenerateButton:disabled, #gptWeeklyPreviewButton:disabled { background:#94a3b8; cursor:wait; }
+
+        /* 학습 분석: 현재 목표와 전체 누적 기록을 명확히 구분 */
+        .analysis-scope-note { margin: -3px 0 15px; color:#475569; font-size:14px; line-height:1.6; }
+        .analysis-history-compare { display:flex; flex-wrap:wrap; gap:8px 16px; margin-top:16px; padding:12px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:9px; color:#475569; font-size:13px; line-height:1.6; }
+        .analysis-history-compare > span { min-width:0; overflow-wrap:anywhere; }
+        .analysis-other-scope { margin:3px 0 14px; padding:10px 12px; border-left:3px solid #94a3b8; background:#f8fafc; font-size:13px; color:#475569; line-height:1.6; }
+
+    
+
+        /* =============================================================
+           모바일/태블릿 UI 보강 (2026-10-14)
+           기존 5개 메뉴, API 호출, 요소 id, DB 저장 로직은 변경하지 않음
+           ============================================================= */
+        html { -webkit-text-size-adjust: 100%; }
+        body { min-width: 0; }
+        .container, .card, .coaching-box, .info-box, .stat-box,
+        .dashboard-header, .page-title-row, .dashboard-quick-links,
+        .llm-markdown, .schedule-timeline, .gpt-weekly-panel { min-width: 0; }
+        .card, .coaching-box, .llm-markdown, .preview-result { overflow-wrap: anywhere; }
+        .card pre, .llm-markdown pre { max-width:100%; overflow-x:auto; white-space:pre; }
+        .card table { max-width:100%; display:block; overflow-x:auto; }
+        .card img, .card svg, .card video { max-width:100%; height:auto; }
+        .card button { min-height:44px; max-width:100%; white-space:normal; }
+        .dashboard-nav .nav-button { min-height:44px; }
+        .dashboard-quick-links a, .button-area a { min-height:44px; }
+        .dashboard-quick-links a { display:flex; justify-content:center; align-items:center; text-align:center; }
+        .info-box, .stat-box, .coaching-box { min-width:0; }
+        .schedule-field input { min-height:46px; font-size:16px; }
+        .schedule-actions { flex-wrap:wrap; }
+        .schedule-actions > button { margin:0; }
+        .gpt-weekly-panel summary, .gpt-prompt-details summary { padding:5px 0; }
+        .analysis-scope-note, .analysis-other-scope { overflow-wrap:anywhere; }
+        .button-area { display:flex; flex-wrap:wrap; justify-content:center; gap:7px; }
+        .button-area > a, .button-area > button { margin:0; font-weight:600; }
+
+        /* 갤럭시탭·아이패드 세로 화면 */
+        @media (min-width: 601px) and (max-width: 950px) {
+            body { padding:20px 18px 36px; }
+            .dashboard-header h1 { font-size:30px; }
+            .dashboard-nav { gap:4px; padding:7px; }
+            .dashboard-nav .nav-button { flex:1 1 0; min-width:0; padding:12px 7px; font-size:13px; }
+            .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .schedule-fields { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .schedule-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); }
+        }
+
+        /* 갤럭시·아이폰: 5개 메뉴를 3+2의 2줄로 고정해 숨김 방지 */
+        @media (max-width: 600px) {
+            body {
+                padding: max(12px, env(safe-area-inset-top))
+                         max(11px, env(safe-area-inset-right))
+                         calc(26px + env(safe-area-inset-bottom))
+                         max(11px, env(safe-area-inset-left));
+            }
+            .container { width:100%; max-width:100%; }
+            .dashboard-header { padding:9px 3px 13px; }
+            .dashboard-eyebrow { font-size:10px; }
+            .dashboard-header h1 { margin:5px 0 6px; font-size:27px; line-height:1.2; }
+            .dashboard-subtitle { font-size:13px; line-height:1.55; }
+            .dashboard-nav {
+                display:grid;
+                grid-template-columns:repeat(6,minmax(0,1fr));
+                gap:5px;
+                padding:7px;
+                position:sticky;
+                top:0;
+                overflow:visible;
+                width:100%;
+                border-radius:12px;
+                box-shadow:0 6px 16px rgba(15,23,42,.10);
+            }
+            .dashboard-nav .nav-button {
+                grid-column:span 2;
+                margin:0;
+                min-width:0;
+                width:100%;
+                min-height:44px;
+                padding:10px 3px;
+                font-size:12.5px;
+                line-height:1.3;
+                text-align:center;
+                white-space:normal;
+                border-radius:8px;
+            }
+            .dashboard-nav .nav-button:nth-child(n+4) { grid-column:span 3; }
+            .page-title-row { gap:9px; margin:17px 2px 0; }
+            .page-title-row h2 { margin-bottom:4px; font-size:21px; }
+            .page-title-row p { font-size:12.5px; }
+            .refresh-tab-button { padding:10px 13px; min-height:42px; margin:0; }
+            .dashboard-quick-links { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:13px 0 2px; }
+            .dashboard-quick-links a { margin:0; min-width:0; padding:12px 7px; font-size:12.5px; }
+            .dashboard-quick-links a:first-child { grid-column:1/-1; }
+            .card { padding:15px 13px; margin-top:12px; border-radius:12px; }
+            .card h2 { font-size:18px; line-height:1.4; margin-bottom:13px; }
+            .card h3 { overflow-wrap:anywhere; }
+            .grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+            .grid > .info-box { grid-column:1/-1; }
+            .info-box, .stat-box { padding:12px 11px; border-radius:9px; }
+            .label { font-size:12px; line-height:1.45; }
+            .value { margin-top:5px; font-size:17px; line-height:1.4; }
+            .coaching-box { margin-top:10px; padding:12px; font-size:14px; line-height:1.6; }
+            .coaching-box p { margin:8px 0; }
+            .today-progress { padding:13px; margin-top:13px; }
+            .today-progress-header { align-items:flex-start; gap:8px; }
+            .today-progress-header h3 { font-size:14px; }
+            .today-progress-rate { font-size:21px; }
+            .today-progress-details { font-size:12px; }
+            .schedule-fields { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+            .schedule-fields label { font-size:12.5px; }
+            .schedule-fields input { padding:10px 5px; }
+            .schedule-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+            .schedule-actions > button { width:100%; margin:0; padding:10px 7px; font-size:13px; }
+            .schedule-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
+            .schedule-metric { padding:10px 7px; text-align:center; }
+            .schedule-metric .metric-value { font-size:16px; }
+            .schedule-slot { grid-template-columns:76px minmax(0,1fr); gap:7px; padding:10px 8px; }
+            .schedule-slot .slot-clock { font-size:11px; }
+            .schedule-slot .slot-title { font-size:13px; }
+            .schedule-slot .slot-subtitle { font-size:12px; }
+            .schedule-legend { gap:8px; font-size:12px; }
+            .reschedule-preview > button { width:100%; margin:5px 0 0; }
+            #realLlmGenerateButton, #studySummaryButton { width:100%; margin:8px 0; }
+            .gpt-weekly-panel { padding:12px 11px; }
+            .gpt-weekly-panel > summary { font-size:14px; line-height:1.5; }
+            .gpt-weekly-panel .schedule-actions { grid-template-columns:1fr; }
+            .llm-markdown { font-size:14px; line-height:1.7; }
+            .llm-markdown h2 { font-size:18px; }
+            .llm-markdown h3 { font-size:16px; }
+            .analysis-history-compare { gap:6px; font-size:12px; padding:10px; }
+            .analysis-history-compare > span { flex-basis:100%; }
+            .button-area { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:22px; }
+            .button-area > a, .button-area > button {
+                width:100%; min-width:0; min-height:44px; padding:11px 7px;
+                margin:0; font-size:12px; display:flex; align-items:center;
+                justify-content:center; text-align:center; white-space:normal;
+            }
+        }
+
+        /* 더 좁은 아이폰 SE 등 */
+        @media (max-width: 360px) {
+            .dashboard-nav .nav-button { font-size:11.5px; padding:9px 2px; }
+            .dashboard-header h1 { font-size:24px; }
+            .grid { gap:7px; }
+            .stat-box { padding:10px 8px; }
+            .value { font-size:15px; }
+            .schedule-fields { grid-template-columns:1fr; }
+            .schedule-metrics { gap:5px; }
+            .schedule-metric { padding:8px 4px; }
+            .schedule-metric .metric-value { font-size:14px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .today-progress-fill { transition:none; }
+        }
+
+        /* Dashboard presentation: API, event IDs and calculation rules stay unchanged. */
+        :root { --ink:#172b4d; --muted:#61718a; --line:#dfe7f3; --blue:#2563eb; }
+        body { padding:24px 28px 40px; background:#f5f8fd; color:var(--ink); font-family:Arial,"Malgun Gothic",sans-serif; }
+        *, *::before, *::after { box-sizing:border-box; }
+        .container { width:100%; max-width:1200px; display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; align-items:start; }
+        .container > * { grid-column:1 / -1; min-width:0; }
+        .dashboard-header { grid-column:span 5; padding:10px 0; }
+        .dashboard-header h1 { font-size:30px; margin:8px 0; color:var(--ink); }
+        .goal-picker { grid-column:span 7; margin:0; padding:14px 18px; border:1px solid var(--line); border-radius:14px; background:white; }
+        .goal-picker label { font-size:13px; font-weight:700; color:var(--muted); }
+        .goal-picker select { margin:6px 0; min-height:42px; font-size:15px; }
+        .goal-picker p { margin:5px 0; font-size:12px; line-height:1.5; }
+        .goal-picker a { margin:4px 0 0; padding:5px 0; font-size:12px; background:transparent; color:var(--blue); }
+        .dashboard-nav { top:10px; padding:6px; gap:6px; box-shadow:0 4px 18px #1e40af09; }
+        .dashboard-nav .nav-button { padding:12px 18px; min-height:44px; }
+        .page-title-row { margin:5px 0 0; }
+        .page-title-row h2 { font-size:23px; }
+        .page-title-row p { font-size:13px; }
+        .card { margin:0; padding:22px; border:1px solid var(--line); border-radius:16px; box-shadow:0 4px 18px #1e40af06; }
+        .card h2 { font-size:18px; line-height:1.5; letter-spacing:-.02em; color:var(--ink); margin:0 0 16px; }
+        .grid { gap:12px; }
+        .stat-box,.info-box { background:#f5f8ff; border:1px solid #e7edf8; border-radius:10px; padding:14px; text-align:left; }
+        .label { font-size:12px; color:var(--muted); line-height:1.5; }
+        .value { font-size:20px; line-height:1.4; margin-top:6px; font-variant-numeric:tabular-nums; color:var(--ink); }
+        .goal-overview .grid { grid-template-columns:2fr repeat(5,minmax(0,1fr)); }
+        .goal-overview .info-box { background:transparent; border:0; border-left:1px solid var(--line); border-radius:0; padding:0 12px; }
+        .goal-overview .info-box:first-child { border-left:0; padding-left:0; }
+        .goal-overview .value { font-size:15px; }
+        .goal-overview h2 { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+        .deadline-badge { border-radius:20px; background:#e9f1ff; padding:4px 10px; color:#1d4ed8; font-size:12px; letter-spacing:0; }
+        .dashboard-quick-links { margin:0; }
+        .dashboard-quick-links a { font-size:13px; border-color:var(--line); }
+        .today-overview { grid-column:span 4; border-top:3px solid var(--blue); }
+        .today-overview p { font-size:14px; line-height:1.75; overflow-wrap:anywhere; white-space:pre-wrap; }
+        .today-overview .muted-text { font-size:12px; }
+        .today-overview + .card[data-section="dashboard"] { grid-column:span 8; }
+        .analysis-scope-note { font-size:12px; color:var(--muted); line-height:1.6; margin:0 0 14px; }
+        #summaryRecommendation { font-size:16px; }
+        .today-progress { margin-top:14px; padding:14px; background:white; }
+        .today-progress-header { align-items:flex-start; }
+        .today-progress-header h3 { font-size:14px; }
+        .today-progress-track { height:9px; margin:12px 0; }
+        .today-progress-details { font-size:12px; }
+        .card[data-section="plan"],.card[data-section="analysis"] { grid-column:span 6; }
+        #dailyScheduleCard,.sac-card.card,.rpr-card.card { grid-column:1 / -1; }
+        .card[data-section="analysis"]:has(#recordCount) { grid-column:1 / -1; }
+        .card[data-section="analysis"]:has(#recordCount) > .grid { grid-template-columns:repeat(6,minmax(0,1fr)); }
+        .coaching-box { padding:14px 16px; margin-top:12px; background:#f8faff; border:1px solid #e5ecf8; border-left:3px solid #b4cdfb; border-radius:10px; }
+        .coaching-box strong { font-size:13px; color:#334e78; }
+        .coaching-box p { margin:8px 0 0; font-size:14px; line-height:1.8; }
+        .schedule-timeline { gap:10px; }
+        .schedule-slot { border:1px solid var(--line); box-shadow:none; }
+        .schedule-slot .slot-time { font-variant-numeric:tabular-nums; font-weight:700; }
+        #scheduleStatus,#schedulePersistenceStatus,#rescheduleSaveResult { padding:10px 12px; border-radius:8px; background:#f0f5ff; margin:10px 0; line-height:1.7; }
+        .preview-result { white-space:pre-wrap; overflow-wrap:anywhere; font-size:14px; }
+        .schedule-fields { gap:12px; }
+        .schedule-field input, #savedPlanDateInput { min-height:42px; border:1px solid #cbd8ec; border-radius:8px; padding:8px; max-width:100%; }
+        .sac-card .sac-panels { gap:16px; }
+        .sac-card .sac-panel { border:1px solid var(--line); padding:18px; border-radius:12px; }
+        .card[data-section="ai"] { grid-column:span 6; }
+        .card[data-section="ai"]:has(.coaching-disclosure[open]),.card[data-section="ai"]:has(#realLlmGenerateButton),.ai-weekly-card { grid-column:1 / -1; }
+        .coaching-disclosure > summary { cursor:pointer; color:var(--blue); line-height:1.6; }
+        .coaching-disclosure > summary h2 { display:inline; margin:0; font-size:16px; }
+        .coaching-disclosure[open] > summary { padding-bottom:16px; border-bottom:1px solid var(--line); margin-bottom:16px; }
+        .disclosure-content { min-width:0; }
+        .gpt-weekly-panel { margin:0; background:white; padding:0; border:0; }
+        .gpt-weekly-panel > summary { color:var(--ink); font-size:17px; min-height:32px; }
+        .prompt-disclosure,.gpt-prompt-details { margin:14px 0; padding:12px; border:1px dashed #cbd8ec; border-radius:10px; color:var(--muted); font-size:13px; }
+        summary { cursor:pointer; overflow-wrap:anywhere; }
+        summary:focus-visible { outline:3px solid #93c5fd; outline-offset:4px; border-radius:6px; }
+        .llm-markdown { text-align:left; font-size:16px; line-height:1.85; overflow-wrap:anywhere; }
+        .llm-markdown p { margin:10px 0 16px; }
+        .llm-markdown pre { white-space:pre-wrap; overflow-wrap:anywhere; }
+        .footer-navigation { border-top:1px solid var(--line); padding-top:16px; color:var(--muted); font-size:13px; }
+        .footer-navigation .button-area { margin-top:8px; display:flex; flex-wrap:wrap; gap:8px; text-align:left; }
+        button,a { font:inherit; font-size:13px; line-height:1.5; max-width:100%; min-height:40px; border-radius:9px; padding:10px 15px; transition:background-color .16s,transform .16s,box-shadow .16s; overflow-wrap:anywhere; }
+        button:hover:not(:disabled),a:hover { transform:translateY(-1px); box-shadow:0 4px 10px #2563eb15; }
+        button:active:not(:disabled),a:active { transform:translateY(1px); box-shadow:none; }
+        button:disabled { cursor:wait; opacity:.65; }
+        .footer-navigation a,.footer-navigation button { background:white; border:1px solid var(--line); color:#335587; margin:0; }
+        .card.is-visible { animation:card-reveal .18s ease-out; }
+        @keyframes card-reveal { from { opacity:.6; transform:translateY(3px); } to { opacity:1; transform:none; } }
+        @media(max-width:900px) {
+            body { padding:18px; } .dashboard-header,.goal-picker { grid-column:1 / -1; }
+            .goal-overview .grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+            .today-overview,.today-overview + .card[data-section="dashboard"] { grid-column:1 / -1; }
+            .card[data-section="analysis"]:has(#recordCount) > .grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+        }
+        @media(max-width:600px) {
+            body { padding:14px 12px 28px; } .container { gap:12px; }
+            .dashboard-header h1 { font-size:26px; } .dashboard-header { padding:0; }
+            .card { padding:16px; border-radius:12px; }
+            .card[data-section],.card[data-section="ai"] { grid-column:1 / -1; }
+            .goal-picker { padding:12px; }
+            .dashboard-nav { top:0; display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); overflow:visible; }
+            .dashboard-nav .nav-button { padding:10px 3px; width:100%; min-width:0; white-space:normal; }
+            .goal-overview .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .goal-overview .info-box { padding:6px; border:0; }
+            .grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+            .card[data-section="ai"] .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .card[data-section="analysis"]:has(#recordCount) > .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .value { font-size:17px; }.stat-box,.info-box { padding:11px; }
+            .today-progress-header { flex-wrap:wrap; } .schedule-fields { grid-template-columns:1fr; }
+            .schedule-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); }
+            .llm-markdown { font-size:15px; }.footer-navigation .button-area > * { flex:1 1 45%; width:auto; }
+            .sac-card .sac-score-row { grid-template-columns:1fr; }
+        }
+        @media(prefers-reduced-motion:reduce) {
+            *,*::before,*::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; }
+            button:hover:not(:disabled),a:hover,button:active:not(:disabled),a:active { transform:none; }
+        }
+    </style>
+    <link rel="stylesheet" href="/ui-polish.css">
+</head>
+<body>
+
+<div class="container">
+        <header class="dashboard-header">
+        <p class="dashboard-eyebrow">MY STUDY WORKSPACE</p>
+        <h1>AI 공부 플래너</h1>
+        <p class="dashboard-subtitle">오늘의 학습부터 분석과 AI 코칭까지, 필요한 기능을 메뉴에서 선택하세요.</p>
+    </header>
+
+    <div class="goal-picker">
+        <label for="currentGoalSelect">현재 사용할 목표</label>
+        <select id="currentGoalSelect"><option value="">목표 목록을 불러오는 중입니다</option></select>
+        <p id="currentGoalNotice" role="status"></p>
+        <a id="completeGoalLink" hidden>과목 등록 완료하기</a>
+    </div>
+
+    <nav class="dashboard-nav" id="dashboardNav" aria-label="주요 메뉴">
+        <button type="button" class="nav-button is-active" data-tab="dashboard" aria-pressed="true" onclick="showDashboardTab('dashboard')">대시보드</button>
+        <button type="button" class="nav-button" data-tab="plan" aria-pressed="false" onclick="showDashboardTab('plan')">학습 계획</button>
+        <button type="button" class="nav-button" data-tab="analysis" aria-pressed="false" onclick="showDashboardTab('analysis')">학습 분석</button>
+        <button type="button" class="nav-button" data-tab="ai" aria-pressed="false" onclick="showDashboardTab('ai')">AI 코칭</button>
+        <button type="button" class="nav-button" data-tab="settings" aria-pressed="false" onclick="showDashboardTab('settings')">설정 · 정보</button>
+    </nav>
+
+    <div class="page-title-row" aria-live="polite">
+        <div>
+            <h2 id="currentPageTitle">대시보드</h2>
+            <p id="currentPageDescription">오늘 공부 현황과 학습 목표를 한눈에 확인합니다.</p>
+        </div>
+        <button type="button" class="refresh-tab-button" onclick="loadData()">현재 메뉴 새로고침</button>
+    </div>
+
+    <section class="card" data-section="dashboard plan" id="studyPlanCalendar" aria-label="월간 학습 일정">
+        <h2>학습 일정</h2><p>목표를 선택한 뒤 학습 계획 메뉴에서 저장된 월간 일정을 확인하세요.</p>
+    </section>
+
+<div class="card is-visible goal-overview" data-section="dashboard">
+        <h2>현재 학습 목표 <span id="goalDeadline" class="deadline-badge">시험일 정보 없음</span></h2>
+
+        <div class="grid">
+            <div class="info-box">
+                <div class="label">목표명</div>
+                <div class="value" id="goalName">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">목표 유형</div>
+                <div class="value" id="goalType">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">시험일</div>
+                <div class="value" id="examDate">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">목표 점수</div>
+                <div class="value" id="targetScore">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">현재 수준</div>
+                <div class="value" id="currentLevel">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">약한 부분</div>
+                <div class="value" id="weakPoint">-</div>
+            </div>
+        </div>
+    </div>
+    <div class="dashboard-quick-links" data-section="dashboard">
+        <a href="/study-log-form.html">+ 공부 기록 입력</a>
+        <a href="/study-question.html">AI에게 질문하기</a>
+        <a href="/survey-form.html">학습 목표 설정</a>
+    </div>
+
+    <div class="card is-visible today-overview" data-section="dashboard">
+        <h2>오늘의 학습 제안</h2>
+        <p id="overviewTodayPlan">현재 목표를 선택해 학습 제안을 확인하세요.</p>
+        <p class="muted-text">규칙 기반 학습 제안입니다. 확정 일정·미완료량·보충 배정은 학습 계획에서 확인하세요.</p>
+        <button type="button" onclick="showDashboardTab('plan')">오늘 일정 · 미완료 학습 확인</button>
+    </div>
+    <div class="card is-visible" data-section="dashboard">
+        <h2>현재 학습 상태 요약</h2>
+        <p class="analysis-scope-note">공부 시간·평균 이해도·평균 집중도·취약 과목·정답률·추천 방향은 현재 선택한 학습 목표의 기록 기준입니다.</p>
+
+        <div class="grid">
+            <div class="stat-box">
+                <div class="label">현재 목표 누적 공부 시간</div>
+                <div class="value" id="summaryTotalStudyMinutes">-</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="label">평균 이해도</div>
+                <div class="value" id="summaryAverageUnderstanding">-</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="label">평균 집중도</div>
+                <div class="value" id="summaryAverageFocus">-</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="label">취약 과목</div>
+                <div class="value" id="summaryWeakSubject">-</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="label">정답률</div>
+                <div class="value" id="summaryCorrectRate">-</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="label">추천 방향</div>
+                <div class="value" id="summaryRecommendation">-</div>
+            </div>
+        </div>
+        <div class="today-progress" aria-live="polite">
+            <div class="today-progress-header">
+                <div>
+                    <h3>오늘의 공부 달성률 · 총 공부 시간 기준</h3>
+                    <p class="muted-text">과목별 미완료량과 기록 확인 대상은 학습 계획의 보충 안내에서 확인해 주세요.</p>
+                    <p id="todayProgressMessage">공부 기록과 계획 시간을 확인하는 중...</p>
+                </div>
+                <div class="today-progress-rate" id="todayProgressRate">-</div>
+            </div>
+            <div class="today-progress-track" role="progressbar" aria-label="오늘 공부 시간 목표 달성률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="todayProgressTrack">
+                <div class="today-progress-fill" id="todayProgressFill" style="width:0%"></div>
+            </div>
+            <div class="today-progress-details" id="todayProgressDetails">공부 기록을 불러오는 중...</div>
+        </div>
+    </div>
+
+    
+
+    <div class="card " data-section="settings">
+        <h2>과목 정보</h2>
+
+        <div class="grid">
+            <div class="info-box">
+                <div class="label">과목명</div>
+                <div class="value" id="subjectName">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">난이도</div>
+                <div class="value" id="difficulty">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">중요도</div>
+                <div class="value" id="priorityLevel">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">현재 자신감</div>
+                <div class="value" id="currentConfidence">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">하루 공부 가능 시간</div>
+                <div class="value" id="dailyStudyTime">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">선호 공부 방식</div>
+                <div class="value" id="preferredStudyMethod">-</div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="card " data-section="plan">
+        <h2>오늘의 학습 계획</h2>
+
+        <div class="grid">
+            <div class="info-box">
+                <div class="label">계획 제목</div>
+                <div class="value" id="planTitle">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">남은 기간</div>
+                <div class="value" id="daysLeft">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">하루 공부 시간</div>
+                <div class="value" id="planDailyStudyTime">-</div>
+            </div>
+        </div>
+
+        <div class="coaching-box">
+            <strong>학습 순서</strong>
+            <p id="studyOrder">불러오는 중...</p>
+        </div>
+
+        <div class="coaching-box">
+            <strong>시간 배분</strong>
+            <p id="timePlan">불러오는 중...</p>
+        </div>
+
+        <div class="coaching-box">
+            <strong>계획 생성 이유</strong>
+            <p id="planReason">불러오는 중...</p>
+        </div>
+
+        <div class="coaching-box">
+            <strong>목표 미달 시 조정</strong>
+            <p id="adjustmentMessage">불러오는 중...</p>
+            <div id="planRecordReview" class="muted-text" hidden aria-live="polite"></div>
+        </div>
+
+        <div class="coaching-box">
+            <strong>조정된 계획</strong>
+            <p id="adjustedPlan">불러오는 중...</p>
+        </div>
+    </div>
+
+    <div class="card " data-section="plan">
+        <h2>학습 계획 자동 재조정</h2>
+
+        <div class="grid">
+            <div class="info-box">
+                <div class="label">목표 공부 시간</div>
+                <div class="value" id="rescheduleTargetTime">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">실제 공부 시간</div>
+                <div class="value" id="rescheduleActualTime">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">재조정 필요 여부</div>
+                <div class="value" id="rescheduleNeed">-</div>
+            </div>
+        </div>
+
+        <div class="coaching-box">
+            <strong>판단 결과</strong>
+            <p id="rescheduleStatus">불러오는 중...</p>
+        </div>
+
+        <div class="coaching-box">
+            <strong>재조정 이유</strong>
+            <p id="rescheduleReason">불러오는 중...</p>
+        </div>
+
+        <div class="coaching-box">
+            <strong>재조정된 학습 계획</strong>
+            <p id="rescheduledPlan">불러오는 중...</p>
+        </div>
+
+        <div class="coaching-box">
+            <strong>학습 전략</strong>
+            <p id="rescheduleStrategy">불러오는 중...</p>
+        </div>
+        <div class="coaching-box reschedule-preview">
+            <strong>다음 학습일 자동 재조정 미리보기</strong>
+            <p class="muted-text">오늘 공부가 현재 기록대로 끝났다고 가정해 내일의 학습량을 계산합니다. 미리보기 결과는 DB에 저장되지 않습니다.</p>
+            <button type="button" id="reschedulePreviewButton" onclick="loadReschedulePreview()">내일 시간표 미리보기</button>
+            <button type="button" id="rescheduleSaveButton" onclick="saveReschedulePlan()">내일 시간표 MySQL 저장</button>
+            <label for="savedPlanDateInput">저장 계획 조회 날짜 (비워 두면 내일)</label>
+            <input type="date" id="savedPlanDateInput" aria-label="저장 계획 조회 날짜">
+            <button type="button" id="rescheduleSavedButton" onclick="loadSavedReschedulePlan()">저장한 계획 확인</button>
+            <div id="reschedulePreviewResult" class="preview-result" aria-live="polite">버튼을 눌러 내일 계획을 확인하세요.</div>
+            <div id="reschedulePreviewReview" class="muted-text" hidden aria-live="polite"></div>
+            <div id="rescheduleSaveResult" class="preview-result" role="status" aria-live="polite">저장 여부는 아직 확인되지 않았습니다.</div>
+            <div id="rescheduleSavedReview" class="muted-text" hidden aria-live="polite"></div>
+        </div>
+    </div>
+
+    <div class="card " data-section="ai"><details class="coaching-disclosure"><summary><h2>초기 학습 코칭</h2></summary><div class="disclosure-content">
+        
+
+        <div class="grid">
+            <div class="info-box">
+                <div class="label">목표명</div>
+                <div class="value" id="initialGoalName">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">현재 수준</div>
+                <div class="value" id="initialCurrentLevel">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">데이터 상태</div>
+                <div class="value" id="initialDataStatus">-</div>
+            </div>
+        </div>
+
+        <div class="coaching-box">
+            <strong>기본 코칭 설명</strong>
+            <p id="initialMainAdvice">불러오는 중...</p>
+        </div>
+
+        <div class="coaching-box">
+            <strong>초기 학습 계획</strong>
+            <p id="initialPlan">불러오는 중...</p>
+        </div>
+    </div></details></div>
+
+    <div class="card " data-section="analysis">
+        <h2>학습 분석 요약</h2>
+        <p class="analysis-scope-note" id="analysisScopeDescription" role="status">현재 학습 목표의 기록만 분석합니다.</p>
+
+        <div class="grid">
+            <div class="stat-box">
+                <div class="label">현재 목표 기록 수</div>
+                <div class="value" id="recordCount">-</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="label">현재 목표 공부 시간</div>
+                <div class="value" id="totalStudyMinutes">-</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="label">평균 이해도</div>
+                <div class="value" id="averageUnderstanding">-</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="label">평균 집중도</div>
+                <div class="value" id="averageFocus">-</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="label">총 정답 수</div>
+                <div class="value" id="totalCorrect">-</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="label">총 오답 수</div>
+                <div class="value" id="totalWrong">-</div>
+            </div>
+        </div>
+        <div class="analysis-history-compare" aria-label="전체 누적과 현재 목표 비교">
+            <span id="analysisGoalLabel">현재 목표 정보를 확인하는 중...</span>
+            <span id="analysisAllTimeLabel">전체 누적 기록을 확인하는 중...</span>
+        </div>
+
+        <div class="coaching-box">
+            <strong>분석 메시지</strong>
+            <p id="mainMessage">불러오는 중...</p>
+        </div>
+    </div>
+
+    <div class="card " data-section="analysis">
+        <h2>과목별 학습 분석</h2>
+        <p class="analysis-other-scope">현재 학습 목표에 속한 과목과 그 공부 기록만 분석합니다.</p>
+
+        <div id="subjectAnalysisArea">
+            과목별 분석 데이터를 불러오는 중...
+        </div>
+    </div>
+
+    <div class="card " data-section="analysis">
+        <h2>취약 과목 추천</h2>
+        <p class="analysis-other-scope">현재 학습 목표의 기록을 기준으로 추천합니다. 현재 과목이 하나라면 다른 과목과 비교한 결과가 아닙니다.</p>
+
+        <div class="grid">
+            <div class="info-box">
+                <div class="label">취약 과목</div>
+                <div class="value" id="weakSubjectName">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">평균 이해도</div>
+                <div class="value" id="weakAverageUnderstanding">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">평균 집중도</div>
+                <div class="value" id="weakAverageFocus">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">정답률</div>
+                <div class="value" id="weakCorrectRate">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">난이도</div>
+                <div class="value" id="weakDifficulty">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">현재 자신감</div>
+                <div class="value" id="weakConfidence">-</div>
+            </div>
+        </div>
+
+        <div class="coaching-box">
+            <strong>취약 원인</strong>
+            <p id="weakReason">불러오는 중...</p>
+        </div>
+
+        <div class="coaching-box">
+            <strong>추천 전략</strong>
+            <p id="weakStrategy">불러오는 중...</p>
+        </div>
+
+        <div class="coaching-box">
+            <strong>오늘의 복습 계획</strong>
+            <p id="weakTodayPlan">불러오는 중...</p>
+        </div>
+    </div>
+
+    <div class="card " data-section="ai"><details class="coaching-disclosure"><summary><h2>개인화 종합 피드백</h2></summary><div class="disclosure-content">
+        
+        <p class="analysis-scope-note">전체 학습 이력 기반 피드백입니다(이전 목표의 기록 포함). 학습 분석 탭의 현재 목표 기준 수치와 다를 수 있습니다.</p>
+
+        <div class="grid">
+            <div class="info-box">
+                <div class="label">총 공부 시간</div>
+                <div class="value" id="personalTotalStudyMinutes">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">평균 이해도</div>
+                <div class="value" id="personalAverageUnderstanding">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">평균 집중도</div>
+                <div class="value" id="personalAverageFocus">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">정답률</div>
+                <div class="value" id="personalCorrectRate">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">질문 기록 수</div>
+                <div class="value" id="personalQuestionCount">-</div>
+            </div>
+        </div>
+
+        <div class="coaching-box">
+            <strong>종합 피드백</strong>
+            <p id="personalFeedbackText">불러오는 중...</p>
+        </div>
+    </div></details></div>
+
+    <div class="card " data-section="ai"><details class="coaching-disclosure"><summary><h2>최근 공부 질문 / AI 조언</h2></summary><div class="disclosure-content">
+        
+        <p id="latestQuestionOrigin">사용자 공통 질문 기록 · 제공업체·모델·관련 목표 정보 없음</p>
+
+        <div class="grid">
+            <div class="info-box">
+                <div class="label">과목</div>
+                <div class="value" id="latestQuestionSubject">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">상황</div>
+                <div class="value" id="latestQuestionSituation">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">이해도</div>
+                <div class="value" id="latestQuestionUnderstanding">-</div>
+            </div>
+        </div>
+
+        <div class="coaching-box">
+            <strong>최근 질문</strong>
+            <p id="latestQuestionText">불러오는 중...</p>
+        </div>
+
+        <div class="coaching-box">
+            <strong>AI 조언</strong>
+            <div id="latestQuestionAdvice" class="llm-markdown" aria-live="polite">불러오는 중...</div>
+        </div>
+    </div></details></div>
+
+    <div class="card " data-section="ai"><details class="coaching-disclosure"><summary><h2>AI 학습 코칭</h2></summary><div class="disclosure-content">
+        
+
+        <div class="coaching-box">
+            <strong>진단</strong>
+            <p id="diagnosis">불러오는 중...</p>
+        </div>
+
+        <div class="coaching-box">
+            <strong>원인 분석</strong>
+            <p id="reason">불러오는 중...</p>
+        </div>
+
+        <div class="coaching-box">
+            <strong>추천 전략</strong>
+            <p id="recommendation">불러오는 중...</p>
+        </div>
+
+        <div class="coaching-box">
+            <strong>오늘의 학습 계획</strong>
+            <p id="todayPlan">불러오는 중...</p>
+        </div>
+
+        <div class="coaching-box">
+            <strong>최근 어려웠던 개념</strong>
+            <p id="difficultTopic">불러오는 중...</p>
+        </div>
+    </div></details></div>
+
+    <div class="card " data-section="settings">
+        <h2>LLM 프롬프트 미리보기</h2>
+
+        <div class="grid">
+            <div class="info-box">
+                <div class="label">목표명</div>
+                <div class="value" id="llmGoalName">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">과목명</div>
+                <div class="value" id="llmSubjectName">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">정답률</div>
+                <div class="value" id="llmCorrectRate">-</div>
+            </div>
+        </div>
+
+        <div class="coaching-box">
+            <strong>LLM에 전달될 프롬프트</strong>
+            <p id="llmPrompt" style="white-space: pre-wrap;">불러오는 중...</p>
+        </div>
+    </div>
+
+    <div class="card " data-section="ai">
+        <h2>일반 AI 학습 코칭</h2>
+        <p class="muted-text">API 호출은 아래 버튼을 눌렀을 때만 실행됩니다.</p>
+        <button type="button" id="realLlmGenerateButton" onclick="loadRealLlmCoaching()">일반 AI 코칭 생성</button>
+
+        <div class="grid">
+            <div class="info-box">
+                <div class="label">사용 모델</div>
+                <div class="value" id="realLlmModel">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">API 상태</div>
+                <div class="value" id="realLlmStatus">-</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">호출 결과</div>
+                <div class="value" id="realLlmReady">-</div>
+            </div>
+        </div>
+
+        <div class="coaching-box">
+            <strong>설명</strong>
+            <p id="realLlmMessage">아직 코칭을 생성하지 않았습니다. 저장된 응답은 아래에서 무료로 조회할 수 있습니다.</p>
+        </div>
+
+        <details class="prompt-disclosure">
+            <summary>전달된 프롬프트 확인</summary>
+            <p id="realLlmPrompt" style="white-space: pre-wrap;">코칭을 생성한 후 확인할 수 있습니다.</p>
+        </details>
+
+        <div class="coaching-box">
+            <strong>LLM 응답</strong>
+            <div id="realLlmResponse" class="llm-markdown" aria-live="polite">AI 코칭 생성 버튼을 누르면 답변이 여기에 표시됩니다.</div>
+        </div>
+
+        <!-- GPT 기능은 기존 Gemini 카드 안에 접어 두어 대시보드 길이를 늘리지 않습니다. -->
+        <details data-ai-history="DAILY_COACHING">
+            <summary>저장된 일반 학습 코칭</summary>
+            <button type="button">최근 저장 응답 조회 (API 호출 없음)</button>
+            <div data-history-output role="status">현재 선택 목표의 저장된 코칭을 조회합니다.</div>
+        </details>
+        
+    </div>
+
+    <div class="card ai-weekly-card" data-section="ai"><details class="gpt-weekly-panel" id="gptWeeklyPanel">
+            <summary>GPT-4o-mini · 주간 학습 분석 및 심층 코칭</summary>
+            <p class="muted-text">현재 목표에 속한 최근 7일 공부 기록과 MySQL에 저장된 재조정 계획을 분석합니다.</p>
+            <p class="muted-text">미리보기는 무료이고, GPT 생성은 OpenAI API 키·크레딧이 준비되고 서버 설정을 활성화했을 때만 호출됩니다.</p>
+            <div class="schedule-actions">
+                <button type="button" id="gptWeeklyPreviewButton" onclick="loadGptWeeklyPreview()">GPT 분석 데이터 미리보기</button>
+                <button type="button" id="gptWeeklyGenerateButton" onclick="generateGptWeekly()">GPT 주간 코칭 생성 (API 비용 발생 가능)</button>
+            </div>
+            <details data-ai-history="WEEKLY_COACHING">
+                <summary>저장된 GPT 주간 코칭</summary>
+                <button type="button">최근 저장 응답 조회 (API 호출 없음)</button>
+                <div data-history-output role="status">현재 선택 목표의 저장된 주간 코칭을 조회합니다.</div>
+            </details>
+            <div id="gptWeeklyStatus" role="status" aria-live="polite">버튼을 눌러 확인해 주세요.</div>
+            <div class="coaching-box"><strong>분석 데이터</strong>
+                <p id="gptWeeklyMetrics" style="white-space:pre-wrap;">아직 불러오지 않았습니다.</p>
+            </div>
+            <details class="gpt-prompt-details"><summary>GPT에 전달할 프롬프트 확인</summary>
+                <p id="gptWeeklyPrompt" style="white-space:pre-wrap; overflow-wrap:anywhere;">-</p>
+            </details>
+            <div class="coaching-box"><strong>GPT 코칭 결과</strong>
+                <div id="gptWeeklyResponse" class="llm-markdown">GPT 코칭을 생성하면 여기에 표시됩니다.</div>
+            </div>
+        </details></div>
+    <!-- 15번 카드: 사용자가 직접 요청할 때만 Gemini 학습 기록 요약 생성 -->
+    <div class="card " data-section="ai" id="geminiStudySummaryCard"><details class="coaching-disclosure"><summary><h2>Gemini 공부 기록 요약</h2></summary><div class="disclosure-content">
+        
+        <p class="study-summary-description">
+            최근 공부 기록을 분석해 학습 패턴과 다음에 할 일을 요약합니다.
+            아래 버튼을 누를 때만 Gemini API를 호출합니다.
+        </p>
+
+        <div class="grid">
+            <div class="info-box">
+                <div class="label">사용 모델</div>
+                <div class="value" id="studySummaryModel">-</div>
+            </div>
+            <div class="info-box">
+                <div class="label">분석한 공부 기록</div>
+                <div class="value" id="studySummaryCount">-</div>
+            </div>
+            <div class="info-box">
+                <div class="label">API 상태</div>
+                <div class="value" id="studySummaryStatus" role="status">대기 중</div>
+            </div>
+        </div>
+
+        <div class="study-summary-action">
+            <button type="button" id="studySummaryButton" onclick="generateStudySummary()">AI 요약 생성</button>
+        </div>
+
+        <div class="coaching-box">
+            <strong>AI 공부 기록 요약</strong>
+            <div id="studySummaryResponse" class="llm-markdown" aria-live="polite">
+                'AI 요약 생성' 버튼을 누르면 최근 공부 기록을 바탕으로 요약을 생성합니다.
+            </div>
+        </div>
+    </div></details></div>
+
+
+<!-- 16번 카드: Spring Boot /study-plan 시간표 표시 (Gemini 호출 없음) -->
+<div class="card " data-section="plan" id="dailyScheduleCard">
+    <h2>오늘의 학습 시간표</h2>
+    <p class="schedule-explanation">
+        공부 시작·종료 시간을 정하면 Spring Boot가 과목별 공부와 휴식을 배치합니다.
+        다른 일정이 있다면 그 시간을 제외하고 충돌 여부도 검사합니다.
+    </p>
+    <div class="schedule-fields">
+        <div class="schedule-field">
+            <label for="scheduleStartInput">공부 시작</label>
+            <input type="time" id="scheduleStartInput" value="19:00" required>
+        </div>
+        <div class="schedule-field">
+            <label for="scheduleEndInput">공부 종료</label>
+            <input type="time" id="scheduleEndInput" value="23:00" required>
+        </div>
+        <div class="schedule-field">
+            <label for="scheduleBusyStartInput">다른 일정 시작 (선택)</label>
+            <input type="time" id="scheduleBusyStartInput">
+        </div>
+        <div class="schedule-field">
+            <label for="scheduleBusyEndInput">다른 일정 종료 (선택)</label>
+            <input type="time" id="scheduleBusyEndInput">
+        </div>
+    </div>
+    <p class="schedule-subnote">같은 날짜 안에서 시간을 설정해 주세요. '시간표 생성 / 다시 계산'은 미리보기이고, '시간표 저장'을 눌러야 MySQL에 저장됩니다. 저장되는 것은 시작·종료 및 다른 일정 시간이며, 학습 시간표는 매번 다시 계산합니다.</p>
+    <div class="schedule-actions">
+        <button type="button" id="scheduleBuildButton" onclick="loadStudyPlan(true)">시간표 생성 / 다시 계산</button>
+        <button type="button" id="scheduleSaveButton" onclick="saveStudyScheduleSettings()">시간표 저장</button>
+    </div>
+    <div id="schedulePersistenceStatus" role="status" aria-live="polite">저장된 시간표 설정을 확인하는 중...</div>
+    <div id="scheduleStatus" role="status" aria-live="polite">시간표를 불러오는 중...</div>
+    <div class="schedule-metrics">
+        <div class="schedule-metric">
+            <div class="label">공부</div><div class="metric-value" id="scheduleStudyMinutes">-</div>
+        </div>
+        <div class="schedule-metric">
+            <div class="label">휴식</div><div class="metric-value" id="scheduleBreakMinutes">-</div>
+        </div>
+        <div class="schedule-metric">
+            <div class="label">다른 일정</div><div class="metric-value" id="scheduleBlockedMinutes">-</div>
+        </div>
+    </div>
+    <div class="schedule-total-bar" id="scheduleTotalBar" aria-label="시간 배분 요약"></div>
+    <div class="schedule-legend"><span>공부</span><span class="rest">휴식</span><span class="busy">다른 일정</span></div>
+    <div class="coaching-box">
+        <strong>시간대별 계획</strong>
+        <div class="schedule-timeline" id="scheduleTimeSlots" role="list">
+            계획이 생성되면 시간표가 여기에 표시됩니다.
+        </div>
+    </div>
+</div>
+
+<details class="footer-navigation"><summary>빠른 이동 및 새로고침</summary>    <div class="button-area">
+        <button onclick="loadData()">현재 메뉴 새로고침</button>
+        <a href="/">메인으로</a>
+        <a href="/survey-form.html">학습 목표 설정</a>
+        <a href="/study-log-form.html">공부 기록 입력</a>
+        <a href="/study-question.html">공부 중 질문 / AI 조언</a>
+        <a href="/study-log-history.html">전체 공부 기록 보기</a>
+    </div></details>
+</div>
+
+<script src="/goal-context.js"></script>
+<script src="/study-analysis-charts.js"></script>
+<script src="/gpt-weekly-cards.js"></script>
+<script src="/review-priority.js"></script>
+<script src="/study-plan-calendar.js"></script>
+<script>
+    const goalFetch = (url, options) => GoalContext.scopedFetch(url, options);
+    // Metadata only. No prompt, answer, auth cookie, key or CSRF token in browser storage.
+    function isIsolatedAiMockDisplay(r){return r.mockResponse===true&&(r.testMode==='AI_MOCK_H2_ONLY'||(r.testMode==='AI_MOCK_DUAL_LEDGER_ONLY'&&r.storageMode==='MYSQL_DUAL_LEDGER_FAKEWIRE'&&r.realAiCalls===0));}
+        const AiCostRequests = (() => {
+        const valid=k=>typeof k==='string'&&/^[a-z0-9][a-z0-9_-]{15,79}$/.test(k);
+        function slot(f){if(!['DAILY_COACHING','STUDY_SUMMARY'].includes(f)||!/^[1-9]\d*$/.test(String(GoalContext.id)))throw new Error('기능·목표를 확인하세요.');return 'planner.ai-cost.v1.user1.'+f+'.goal.'+GoalContext.id;}
+        function pending(f){const raw=localStorage.getItem(slot(f));if(raw===null)return null;const v=JSON.parse(raw);if(!v||v.v!==1||!valid(v.key)||Object.keys(v).sort().join(',')!=='key,v')throw new Error('AI 요청 키 보관 상태 오류. 새 생성을 차단합니다.');return v.key;}
+        async function lock(f,fn){if(!navigator.locks)throw new Error('안전한 요청 키 보관을 지원하는 localhost/HTTPS 브라우저가 필요합니다.');return navigator.locks.request(slot(f),fn);}
+        async function reserve(f){return lock(f,()=>{if(pending(f))throw new Error('이전 코칭·요약 결과가 미확인입니다. 새 생성 없이 GET으로 확인하세요.');const bytes=crypto.getRandomValues(new Uint8Array(16));const key='ai_'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');localStorage.setItem(slot(f),JSON.stringify({v:1,key}));if(pending(f)!==key)throw new Error('요청 키 보관 실패. 전송하지 않습니다.');return key;});}
+        async function complete(f,k){return lock(f,()=>{if(pending(f)===k)localStorage.removeItem(slot(f));});}
+        async function policy(){const r=await fetch('/ai-generation-policy',{cache:'no-store'});if(r.status===404)return {enabled:false,legacy:true};if(!r.ok)throw new Error('비용 보호 설정 조회 실패. 새 생성은 하지 않았습니다.');const p=await r.json();if(typeof p.enabled!=='boolean'||p.version!==1)throw new Error('비용 보호 계약 미확인. 생성하지 않습니다.');return p;}
+        function validResult(f,r,model){const field=f==='DAILY_COACHING'?'llmResponse':'summary';if(!r||r.goalId!==Number(GoalContext.id)||typeof r[field]!=='string'||!r[field].trim()||!['provider','rule'].includes(r.responseSource))return false;if(model&&(!model.startsWith('gemini-')||r.provider!=='gemini'||r.model!==model||typeof r.responseModel!=='string'||!r.responseModel.startsWith(model)))return false;return true;}
+        async function generate(f,path){
+            if(pending(f))throw new Error('미확인 요청이 보관돼 있습니다. 결과 GET/저장 이력을 확인하세요.');
+            const p=await policy();let model=null;
+            if(p.enabled){const config=p.features?.[f];if(config?.configured!==true||typeof config.approvedModel!=='string')throw new Error('기능별 비용 정책 미승인 상태로 생성하지 않습니다.');model=config.approvedModel;}
+            if(!window.confirm('선택 목표 '+GoalContext.id+' / '+(f==='DAILY_COACHING'?'일반 코칭':'공부 기록 요약')+'\n외부 AI 비용이 발생할 수 있습니다. '+(p.enabled?'영속 예약·승인 한도를 적용합니다.':'서버 영속 비용 보호 OFF/미지원입니다.')+'\n오류·응답 유실 시 자동 재전송하지 않습니다. 생성할까요?'))return null;
+            const key=await reserve(f);let response;
+            try{
+                response=await fetch(GoalContext.url(path),p.enabled?{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify({confirmPaidCall:true,expectedModel:model})}:{cache:'no-store'});
+                if(!response.ok){if([400,401,403,404,422].includes(response.status))await complete(f,key);throw new Error('생성 결과 확인 실패 (HTTP '+response.status+'). 자동 재전송하지 않습니다.');}
+                const r=await response.json();
+                if(r.goalId!==Number(GoalContext.id))throw new Error('다른 목표의 응답을 표시하지 않습니다.');
+                if(p.enabled&&(r.costProtection?.requestKey!==key||r.costProtection?.enabled!==true))throw new Error('비용 보호 요청 키가 일치하지 않습니다.');
+                const noSend=p.enabled&&r.costProtection.state==='NO_SEND'&&r.costProtection.dispatchReserved===false;
+                if(noSend){await complete(f,key);return r;}
+                if(!validResult(f,r,model))throw new Error('모델·목표·출처·답변을 확인할 수 없습니다. 저장/과금 여부를 확인하세요.');
+                if((p.enabled&&r.costProtection.state==='COMPLETED'&&r.costProtection.resultStored===true)||r.responseSaved===true||(!p.enabled&&f==='STUDY_SUMMARY')||r.responseSource==='rule')await complete(f,key);
+                return r;
+            }catch(e){throw new Error((e.message||'응답 미확인')+' 새 AI 요청을 자동 전송하지 않았습니다.');}
+        }
+        async function lookup(f){const key=pending(f);if(!key)throw new Error('보관된 요청 키가 없습니다.');const p=await policy();if(!p.enabled)throw new Error('비용 보호 OFF/미지원. 저장 이력과 실제 호출 여부를 확인하세요. 새 생성하지 않습니다.');if(typeof p.features?.[f]?.approvedModel!=='string'||!p.features[f].approvedModel.startsWith('gemini-'))throw new Error('승인된 모델 계약 미확인. 새 생성하지 않습니다.');const url='/ai-generation-requests?feature='+f+'&requestKey='+encodeURIComponent(key);const r=await fetch(GoalContext.url(url),{cache:'no-store'});if(!r.ok)throw new Error('결과 조회 실패. 새 요청은 하지 않습니다.');const data=await r.json();if(data.goalId!==Number(GoalContext.id)||data.feature!==f||data.requestKey!==key)throw new Error('요청 키·목표·기능 불일치');if(data.state!=='COMPLETED')return null;if(!validResult(f,data.result,p.features?.[f]?.approvedModel)||data.result.costProtection?.requestKey!==key||data.result.costProtection?.state!=='COMPLETED')throw new Error('저장된 모델·출처·답변을 확인할 수 없습니다.');await complete(f,key);return data.result;}
+        return {pending,generate,lookup};
+    })();
+    function refreshAiCostControls(){
+        for(const [f,id,target] of [['DAILY_COACHING','realLlmGenerateButton','realLlmMessage'],['STUDY_SUMMARY','studySummaryButton','studySummaryStatus']]){
+            const button=document.getElementById(id);if(!button)continue;
+            let pending;try{pending=AiCostRequests.pending(f);}catch(_){pending=true;}
+            if(!pending)continue;
+            button.disabled=true;button.textContent='미확인 요청 · 새 생성 차단';
+            const area=document.getElementById(target);area.textContent='미확인 AI 요청 키가 보관돼 있습니다. 비용 미발생을 의미하지 않습니다. 새로고침·재진입으로 재호출하지 않습니다.';
+            if(!document.getElementById('lookup_'+f)){const b=document.createElement('button');b.type='button';b.id='lookup_'+f;b.textContent='요청 결과 GET 확인 · 생성 없음';b.onclick=async()=>{b.disabled=true;try{const r=await AiCostRequests.lookup(f);if(r){renderLlmMarkdown(r[f==='DAILY_COACHING'?'llmResponse':'summary'],f==='DAILY_COACHING'?'realLlmResponse':'studySummaryResponse');area.textContent=(isIsolatedAiMockDisplay(r)?'격리 Mock · 실제 AI 아님 · ':'')+'서버 원장 저장 결과 확인. FINAL은 변경하지 않습니다.';}else{area.appendChild(document.createTextNode(' 결과 미확정. 미전송·비용 미발생을 단정하지 않습니다.'));}}catch(e){area.appendChild(document.createTextNode(' '+e.message));}finally{b.disabled=false;}};area.insertAdjacentElement('afterend',b);}
+        }
+    }
+    window.addEventListener('DOMContentLoaded',refreshAiCostControls);
+    let goalReady = false;
+    function setText(id, value) {
+        document.getElementById(id).innerText =
+            value !== null && value !== undefined && value !== "" ? value : "-";
+        if (id === "todayPlan") document.getElementById("overviewTodayPlan").textContent = value || "학습 제안 정보 없음";
+        if (id === "examDate") {
+            const badge = document.getElementById("goalDeadline");
+            const date = typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? Date.parse(value + "T00:00:00Z") : NaN;
+            const parts = new Intl.DateTimeFormat("en", {timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+            const part = name => parts.find(p => p.type === name).value;
+            const today = Date.parse(part("year") + "-" + part("month") + "-" + part("day") + "T00:00:00Z");
+            const days = Math.round((date - today) / 86400000);
+            badge.textContent = !Number.isFinite(days) ? "시험일 정보 없음" : days > 0 ? "D−" + days : days === 0 ? "D-DAY" : "시험일 지남";
+        }
+    }
+
+    function setNumber(id, value) {
+        document.getElementById(id).innerText =
+            value !== null && value !== undefined ? Number(value).toFixed(1) : "-";
+    }
+
+    // 현재 목표용 분석 API만 학습 분석 탭에 사용합니다.
+    // 대시보드 전체 누적 요약(/analysis-summary)은 별도 함수에서 기존대로 유지합니다.
+    async function loadAnalysisSummary() {
+        const description = document.getElementById("analysisScopeDescription");
+        try {
+            const response = await goalFetch("/analysis-summary/current", {cache: "no-store"});
+            if (!response.ok) throw new Error("HTTP " + response.status);
+            const data = await response.json();
+            if (data.scope !== "CURRENT_GOAL") {
+                throw new Error(data.message || "현재 목표 분석 데이터가 아닙니다.");
+            }
+
+            setText("recordCount", data.recordCount);
+            setText("totalStudyMinutes", data.totalStudyMinutes != null ? data.totalStudyMinutes + "분" : "-");
+            setNumber("averageUnderstanding", data.averageUnderstanding);
+            setNumber("averageFocus", data.averageFocus);
+            setText("totalCorrect", data.totalCorrect);
+            setText("totalWrong", data.totalWrong);
+            setText("mainMessage", data.mainMessage || data.message || "분석 결과가 없습니다.");
+
+            description.textContent = "현재 학습 목표: " + (data.goalName || "목표 " + (data.goalId ?? "미확인")) + " · 이 목표의 공부 기록만 분석";
+            document.getElementById("analysisGoalLabel").textContent =
+                "현재 목표: " + (data.currentGoalRecordCount ?? data.recordCount ?? "-") + "건 · " +
+                (data.currentGoalTotalStudyMinutes ?? data.totalStudyMinutes ?? "-") + "분";
+            document.getElementById("analysisAllTimeLabel").textContent =
+                "전체 누적(이전 목표 포함): " + (data.allTimeRecordCount ?? "-") + "건 · " +
+                (data.allTimeTotalStudyMinutes ?? "-") + "분";
+        } catch (error) {
+            description.textContent = "현재 학습 목표의 분석을 불러오지 못했습니다.";
+            setText("mainMessage", "학습 분석 데이터를 불러오지 못했습니다. /analysis-summary/current API를 확인하세요. " + (error.message || String(error)));
+            document.getElementById("analysisGoalLabel").textContent = "현재 목표: 조회 실패";
+            document.getElementById("analysisAllTimeLabel").textContent = "전체 누적: 조회 실패";
+            for (const id of ["recordCount", "totalStudyMinutes", "averageUnderstanding", "averageFocus", "totalCorrect", "totalWrong"]) {
+                setText(id, "-");
+            }
+        }
+    }
+
+    function loadAiCoaching() {
+        goalFetch("/ai-coaching")
+            .then(response => response.json())
+            .then(data => {
+                setText("goalName", data.goalName);
+                setText("goalType", data.goalType);
+                setText("examDate", data.examDate);
+                setText("targetScore", data.targetScore);
+                setText("currentLevel", data.currentLevel);
+                setText("weakPoint", data.weakPoint);
+
+                setText("subjectName", data.subjectName);
+                setText("difficulty", data.difficulty);
+                setText("priorityLevel", data.priorityLevel);
+                setText("currentConfidence", data.currentConfidence);
+                setText("dailyStudyTime", data.dailyStudyTime !== undefined ? data.dailyStudyTime + "분" : "-");
+                setText("preferredStudyMethod", data.preferredStudyMethod);
+
+                setText("diagnosis", data.diagnosis);
+                setText("reason", data.reason);
+                setText("recommendation", data.recommendation);
+                setText("todayPlan", data.todayPlan);
+                setText("difficultTopic", data.difficultTopic);
+            })
+            .catch(error => {
+                setText("diagnosis", "AI 코칭 데이터를 불러오지 못했습니다.");
+            });
+    }
+
+
+// 학습 계획과 시간표를 동일한 /study-plan 응답에서 받아 서로 다른 계획을 보여주지 않도록 합니다.
+let scheduleRequestId = 0;
+function showScheduleStatus(message, success = null) {
+    const area = document.getElementById("scheduleStatus");
+    area.textContent = message;
+    area.className = success === null ? "" : success ? "schedule-success" : "schedule-error";
+}
+
+function clockLabel(value) {
+    return typeof value === "string" ? value.slice(-5) : "--:--";
+}
+
+function renderStudySchedule(data, input) {
+    setText("scheduleStudyMinutes", (Number(data.studyMinutes) || 0) + "분");
+    setText("scheduleBreakMinutes", (Number(data.breakMinutes) || 0) + "분");
+    setText("scheduleBlockedMinutes", (Number(data.blockedMinutes) || 0) + "분");
+    const isValid = data.isScheduleValid === true && data.hasConflict === false;
+    const notice = data.timeWindowNotice || "";
+    const validation = data.scheduleValidationMessage || "일정 검증 결과가 없습니다.";
+    showScheduleStatus((isValid ? "✓ " : "⚠ ") + validation + (notice ? "\n" + notice : ""), isValid);
+
+    const bar = document.getElementById("scheduleTotalBar");
+    bar.replaceChildren();
+    const blocks = [
+        ["study", Number(data.studyMinutes) || 0],
+        ["rest", Number(data.breakMinutes) || 0],
+        ["busy", Number(data.blockedMinutes) || 0]
+    ];
+    const total = blocks.reduce((sum, item) => sum + item[1], 0);
+    if (total > 0) {
+        for (const [name, minutes] of blocks) {
+            if (minutes <= 0) continue;
+            const segment = document.createElement("div");
+            segment.className = name;
+            segment.style.width = (minutes / total * 100) + "%";
+            bar.appendChild(segment);
+        }
+    }
+
+    const timeline = document.getElementById("scheduleTimeSlots");
+    timeline.replaceChildren();
+    const slots = Array.isArray(data.timeSlots) ? [...data.timeSlots] : [];
+    if (Number(data.blockedMinutes) > 0 && input.busyStart && input.busyEnd) {
+        slots.push({
+            type: "다른 일정", subjectName: "", activity: "입력한 다른 일정",
+            startTime: String(data.scheduleDate || "") + " " + input.busyStart,
+            endTime: String(data.scheduleDate || "") + " " + input.busyEnd,
+            minutes: Number(data.blockedMinutes)
+        });
+    }
+    slots.sort((a, b) => String(a.startTime || "").localeCompare(String(b.startTime || "")));
+    if (!slots.length) {
+        timeline.textContent = "배치된 시간대가 없습니다. 설정을 확인해 주세요.";
+        return;
+    }
+    for (const slot of slots) {
+        const type = slot.type === "휴식" ? "rest" : slot.type === "다른 일정" ? "busy" : "study";
+        const row = document.createElement("div");
+        row.className = "schedule-slot " + type;
+        row.setAttribute("role", "listitem");
+        const clock = document.createElement("div");
+        clock.className = "slot-clock";
+        clock.textContent = clockLabel(slot.startTime) + "–" + clockLabel(slot.endTime);
+        const info = document.createElement("div");
+        const title = document.createElement("div");
+        title.className = "slot-title";
+        title.textContent = type === "study" ? (slot.subjectName || "과목 미지정") : type === "rest" ? "휴식" : "다른 일정";
+        const detail = document.createElement("div");
+        detail.className = "slot-subtitle";
+        detail.textContent = slot.activity || (type === "study" ? "학습" : "");
+        info.append(title, detail);
+        const duration = document.createElement("div");
+        duration.className = "slot-minutes";
+        duration.textContent = (Number(slot.minutes) || 0) + "분";
+        row.append(clock, info, duration);
+        timeline.appendChild(row);
+    }
+}
+
+// 16번 카드: 화면에 입력된 시간대를 공통 형식으로 읽어 옵니다.
+function getScheduleInput() {
+    return {
+        start: document.getElementById("scheduleStartInput").value,
+        end: document.getElementById("scheduleEndInput").value,
+        busyStart: document.getElementById("scheduleBusyStartInput").value,
+        busyEnd: document.getElementById("scheduleBusyEndInput").value
+    };
+}
+
+function scheduleInputError(input) {
+    if (!input.start || !input.end || input.end <= input.start) {
+        return "종료 시간은 시작 시간보다 늦어야 합니다. 같은 날짜의 시간대를 선택해 주세요.";
+    }
+    if (Boolean(input.busyStart) !== Boolean(input.busyEnd)) {
+        return "다른 일정 시작과 종료는 둘 다 입력하거나 둘 다 비워 주세요.";
+    }
+    if (input.busyStart && (input.busyStart >= input.busyEnd || input.busyStart < input.start || input.busyEnd > input.end)) {
+        return "다른 일정은 공부 시간대 안에서 시작 시간보다 종료 시간이 늦어야 합니다.";
+    }
+    return "";
+}
+
+function showSchedulePersistence(message, status = "") {
+    const area = document.getElementById("schedulePersistenceStatus");
+    area.textContent = message;
+    area.className = status;
+}
+
+// GET /study-schedule-settings: 서버에서 오늘(KST) 설정을 읽어 온 뒤 시간표 계산.
+// 데이터가 없으면 서버가 제공하는 기본값(19:00~23:00)을 사용합니다.
+async function loadSavedStudySchedule() {
+    const saveButton = document.getElementById("scheduleSaveButton");
+    saveButton.disabled = true;
+    showSchedulePersistence("MySQL에 저장된 오늘의 시간표 설정을 확인하고 있습니다...");
+    try {
+        const response = await fetch("/study-schedule-settings", { cache: "no-store" });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "조회 실패 (HTTP " + response.status + ")");
+        document.getElementById("scheduleStartInput").value = data.startTime || "19:00";
+        document.getElementById("scheduleEndInput").value = data.endTime || "23:00";
+        document.getElementById("scheduleBusyStartInput").value = data.busyStart || "";
+        document.getElementById("scheduleBusyEndInput").value = data.busyEnd || "";
+        if (data.saved === true) {
+            showSchedulePersistence("✓ " + (data.scheduleDate || "오늘") + " 저장된 시간표 설정을 불러왔습니다."
+                + (data.updatedAt ? " (마지막 저장: " + data.updatedAt + ")" : ""), "schedule-saved");
+        } else {
+            showSchedulePersistence((data.scheduleDate || "오늘") + " 저장된 설정이 없어 기본값을 사용 중입니다. 필요하면 '시간표 저장'을 눌러 주세요.", "schedule-unsaved");
+        }
+    } catch (error) {
+        showSchedulePersistence("⚠ 저장 설정을 불러오지 못했습니다: " + (error.message || String(error))
+            + " — 화면의 현재 값으로 시간표를 계산할 수는 있지만 저장 여부를 확인해 주세요.", "schedule-save-error");
+    } finally {
+        saveButton.disabled = false;
+        await loadStudyPlan();
+    }
+}
+
+// POST /study-schedule-settings: 공부 시작/종료 및 다른 일정 시간을 MySQL에 저장합니다.
+async function saveStudyScheduleSettings() {
+    const saveButton = document.getElementById("scheduleSaveButton");
+    if (saveButton.disabled) return;
+    const input = getScheduleInput();
+    const validationError = scheduleInputError(input);
+    if (validationError) {
+        showSchedulePersistence("⚠ 저장하지 못했습니다: " + validationError, "schedule-save-error");
+        return;
+    }
+    saveButton.disabled = true;
+    saveButton.textContent = "저장 중...";
+    showSchedulePersistence("설정을 MySQL에 저장하고 있습니다...");
+    try {
+        const response = await fetch("/study-schedule-settings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                startTime: input.start,
+                endTime: input.end,
+                busyStart: input.busyStart,
+                busyEnd: input.busyEnd
+            })
+        });
+        const data = await response.json();
+        if (!response.ok || data.saved !== true) {
+            throw new Error(data.message || "저장 실패 (HTTP " + response.status + ")");
+        }
+        showSchedulePersistence("✓ " + (data.scheduleDate || "오늘") + " 시간표 설정을 MySQL에 저장했습니다."
+            + (data.updatedAt ? " (마지막 저장: " + data.updatedAt + ")" : ""), "schedule-saved");
+        await loadStudyPlan();
+    } catch (error) {
+        showSchedulePersistence("⚠ 저장 실패: " + (error.message || String(error)), "schedule-save-error");
+    } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = "시간표 저장";
+    }
+}
+
+// 과거 저장 안내의 배열 표현도 제거합니다. 날짜별 정보는 전용 영역에서 한 번만 표시합니다.
+function noticeWithoutReviewDetails(value) {
+    const text = String(value ?? "");
+    const markers = ["기록 확인 필요:", "계획 확인 필요:",
+        "공부 기록 확인 대상은 ", "계획 자료 확인 대상은 "];
+    const positions = markers.map(marker => text.indexOf(marker)).filter(index => index >= 0);
+    return (positions.length ? text.slice(0, Math.min(...positions)) : text).trim();
+}
+
+function reviewDateLabel(value) {
+    const text = String(value ?? "날짜 정보 없음");
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+    return match ? Number(match[2]) + "월 " + Number(match[3]) + "일" : text;
+}
+
+function reviewMinutes(value) {
+    return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
+        ? value + "분" : "정보 없음";
+}
+
+function renderRecordReview(targetId, data, saved = false) {
+    renderCarryoverAttribution(targetId, data, saved);
+    const target = document.getElementById(targetId);
+    target.replaceChildren();
+    target.hidden = true;
+    const days = new Map();
+    if (Array.isArray(data.unrecordedDates)) {
+        data.unrecordedDates.forEach(date => {
+            if (typeof date === "string" && date) days.set(date, {date});
+        });
+    }
+    if (Array.isArray(data.unrecordedDays)) {
+        data.unrecordedDays.forEach(day => {
+            if (day && typeof day.date === "string" && day.date) days.set(day.date, day);
+        });
+    }
+    const reviewDates = Array.isArray(data.carryoverPlanReviewDates)
+        ? [...new Set(data.carryoverPlanReviewDates.filter(date => typeof date === "string" && date))] : [];
+    const hasTotal = typeof data.unrecordedPlannedMinutes === "number"
+        && Number.isSafeInteger(data.unrecordedPlannedMinutes) && data.unrecordedPlannedMinutes > 0;
+    if (!days.size && !reviewDates.length && !hasTotal) return;
+    target.hidden = false;
+    const addLine = text => {
+        const paragraph = document.createElement("p");
+        paragraph.textContent = text;
+        target.appendChild(paragraph);
+    };
+    addLine(saved
+        ? "저장 당시의 확인 정보입니다. 현재 상태는 내일 미리보기에서 다시 확인해 주세요."
+        : "현재 다시 계산한 확인 정보입니다.");
+    days.forEach(day => {
+        const basis = day.basis === "FINAL" ? "확정 계획 기준"
+            : day.basis === "SETTINGS_ESTIMATE" ? "시간 설정 기반 추정" : "계산 근거 정보 없음";
+        addLine(reviewDateLabel(day.date) + " — 계획 " + reviewMinutes(day.plannedStudyMinutes)
+            + " · 공부 기록 확인 필요 · " + basis);
+    });
+    if (!days.size && hasTotal) addLine("날짜별 계획 시간: 정보 없음");
+    if (days.size || hasTotal) {
+        addLine("확인 대상 계획 시간 합계: " + reviewMinutes(data.unrecordedPlannedMinutes));
+        addLine("이 시간은 확정된 미완료 학습량이 아닙니다. 공부 기록을 확인해 주세요.");
+    }
+    reviewDates.forEach(date => addLine(reviewDateLabel(date) + " — 계획 자료 확인 필요"));
+}
+
+// 같은 카드 안에서 기록 미입력과 과목 근거 부족을 별도 안내합니다.
+function renderCarryoverAttribution(targetId, data, saved) {
+    const reference = document.getElementById(targetId);
+    let target = document.getElementById(targetId + "Attribution");
+    if (!target) {
+        target = document.createElement("div");
+        target.id = targetId + "Attribution";
+        target.className = "muted-text";
+        target.setAttribute("aria-live", "polite");
+        reference.after(target);
+    }
+    target.replaceChildren();
+    target.hidden = true;
+    const validMinutes = value => typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+    const balances = Array.isArray(data.carryoverBySubject) ? data.carryoverBySubject.filter(item => item && typeof item === "object") : [];
+    const unrecorded = Array.isArray(data.unrecordedSubjects) ? data.unrecordedSubjects.filter(item => item && typeof item === "object") : [];
+    const review = Array.isArray(data.carryoverAttributionReviewDates)
+        ? [...new Set(data.carryoverAttributionReviewDates.filter(date => typeof date === "string" && date))] : [];
+    const unknown = validMinutes(data.carryoverUnattributedMinutes) ? data.carryoverUnattributedMinutes : null;
+    if (!saved && !balances.length && !unrecorded.length && !review.length && !(unknown > 0)) return;
+    const complete = Array.isArray(data.carryoverBySubject) && Array.isArray(data.unrecordedSubjects)
+        && Array.isArray(data.carryoverAttributionReviewDates);
+    if (saved && complete && unknown === 0 && !balances.length && !unrecorded.length && !review.length) return;
+    target.hidden = false;
+    const line = text => {
+        const p = document.createElement("p");
+        p.textContent = text;
+        target.appendChild(p);
+    };
+    line(saved ? "저장 당시의 과목별 보충 정보입니다. 현재 다시 계산한 결과와 다를 수 있습니다."
+        : "현재 다시 계산한 과목별 보충 정보입니다.");
+    if (unknown === null) line("과목 미확인 부족분: 정보 없음 · 과거 저장 계획에서 값을 추정하지 않습니다.");
+    else if (unknown > 0) {
+        line("과목 미확인 부족분: " + reviewMinutes(unknown) + " · 자동 보충 배정 보류");
+        line("공부 기록은 있으나 과목별 계획 또는 상환 근거가 부족합니다. 공부 기록 미입력과 구분하여 보존한 양입니다.");
+    }
+    balances.forEach(item => line(String(item.subjectName ?? "과목 정보 없음")
+        + " — 확인 잔액 " + reviewMinutes(item.pendingMinutes)
+        + " · 이번 보충 " + reviewMinutes(item.allocatedMinutes)));
+    unrecorded.forEach(item => line(reviewDateLabel(item.date) + " — "
+        + String(item.subjectName ?? "과목 정보 없음") + " · 계획 " + reviewMinutes(item.plannedStudyMinutes)
+        + " · 해당 과목 공부 기록 미입력 · 부족분 확정 및 기존 잔액 차감 보류"));
+    if (unrecorded.length) line("미입력 과목의 계획 시간은 확정 미완료량에 포함하지 않습니다.");
+    review.forEach(date => line(reviewDateLabel(date) + " — 과목별 계획·상환 근거 확인 필요"));
+    if (saved && !Array.isArray(data.carryoverBySubject)) line("과목별 잔액: 정보 없음");
+    if (saved && !Array.isArray(data.unrecordedSubjects)) line("과목별 기록 확인 정보: 정보 없음");
+}
+
+async function loadStudyPlan(exposeCalendar = false) {
+    renderRecordReview("planRecordReview", {});
+    const input = getScheduleInput();
+    const validationError = scheduleInputError(input);
+    if (validationError) {
+        showScheduleStatus(validationError, false);
+        return;
+    }
+    const requestId = ++scheduleRequestId;
+    const button = document.getElementById("scheduleBuildButton");
+    button.disabled = true;
+    button.textContent = "시간표 계산 중...";
+    showScheduleStatus("공부 시간과 휴식을 배치하고 있습니다...");
+    const params = new URLSearchParams({ startTime: input.start, endTime: input.end });
+    if (input.busyStart) {
+        params.set("busyStart", input.busyStart);
+        params.set("busyEnd", input.busyEnd);
+    }
+    try {
+        const response = await goalFetch("/study-plan?" + params.toString());
+        if (!response.ok) throw new Error("서버 오류 (HTTP " + response.status + ")");
+        const data = await response.json();
+        if (requestId !== scheduleRequestId) return;
+        if (data.message) {
+            showScheduleStatus(data.message, false);
+            setText("studyOrder", data.message);
+            setText("planReason", data.nextStep || "선택한 목표의 설정을 확인해 주세요.");
+            ["planTitle", "daysLeft", "planDailyStudyTime", "timePlan", "adjustmentMessage", "adjustedPlan"].forEach(id => setText(id, "-"));
+            return;
+        }
+        setText("planTitle", data.planTitle);
+        setText("daysLeft", data.daysLeft !== undefined ? data.daysLeft + "일" : "-");
+        setText("planDailyStudyTime", data.dailyStudyTime !== undefined ? data.dailyStudyTime + "분" : "-");
+        setText("studyOrder", data.studyOrder);
+        setText("timePlan", data.timePlan);
+        setText("planReason", data.reason);
+        setText("adjustmentMessage", noticeWithoutReviewDetails(data.adjustmentMessage));
+        setText("adjustedPlan", data.adjustedPlan);
+        renderRecordReview("planRecordReview", data, data.planSaved === true);
+        renderStudySchedule(data, input);
+        if (exposeCalendar) await window.StudyPlanCalendar?.showCalculated(data);
+    } catch (error) {
+        if (requestId !== scheduleRequestId) return;
+        showScheduleStatus("학습 시간표를 불러오지 못했습니다. " + (error.message || String(error)), false);
+        setText("studyOrder", "학습 계획 데이터를 불러오지 못했습니다.");
+    } finally {
+        if (requestId === scheduleRequestId) {
+            button.disabled = false;
+            button.textContent = "시간표 생성 / 다시 계산";
+        }
+    }
+}
+
+    function loadAutoReschedule() {
+        goalFetch("/auto-reschedule")
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    setText("rescheduleStatus", data.message);
+                    setText("rescheduleReason", data.recommendation || "-");
+                    setText("rescheduledPlan", "-");
+                    setText("rescheduleStrategy", "-");
+                    return;
+                }
+
+                setText("rescheduleTargetTime",
+                    data.targetStudyTime !== undefined ? data.targetStudyTime + "분" : "-"
+                );
+
+                setText("rescheduleActualTime",
+                    data.actualStudyTime !== undefined ? data.actualStudyTime + "분" : "-"
+                );
+
+                setText("rescheduleNeed", data.needReschedule ? "필요" : "불필요");
+                setText("rescheduleStatus", data.status);
+                setText("rescheduleReason", data.reason);
+                setText("rescheduledPlan", data.rescheduledPlan);
+                setText("rescheduleStrategy", data.strategy);
+            })
+            .catch(error => {
+                setText("rescheduleStatus", "자동 재조정 데이터를 불러오지 못했습니다.");
+            });
+    }
+
+    function loadInitialCoaching() {
+        goalFetch("/initial-coaching")
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    setText("initialMainAdvice", data.message);
+                    setText("initialPlan", data.recommendation || "-");
+                    return;
+                }
+
+                setText("initialGoalName", data.goalName);
+                setText("initialCurrentLevel", data.currentLevel);
+                setText("initialDataStatus", data.dataStatus);
+                setText("initialMainAdvice", data.mainAdvice);
+                setText("initialPlan", data.initialPlan);
+            })
+            .catch(error => {
+                setText("initialMainAdvice", "초기 학습 코칭 데이터를 불러오지 못했습니다.");
+                setText("initialPlan", "-");
+            });
+    }
+
+    function loadPersonalFeedback() {
+        ["personalTotalStudyMinutes", "personalAverageUnderstanding", "personalAverageFocus", "personalCorrectRate", "personalQuestionCount"].forEach(id => setText(id, "정보 없음"));
+        return goalFetch("/personal-feedback")
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    setText("personalFeedbackText", data.message + "\n" + (data.recommendation || ""));
+                    return;
+                }
+
+                setText("personalTotalStudyMinutes",
+                    data.totalStudyMinutes !== undefined ? data.totalStudyMinutes + "분" : "-"
+                );
+
+                setText("personalAverageUnderstanding",
+                    data.averageUnderstanding != null ? data.averageUnderstanding + "/5" : "정보 없음"
+                );
+
+                setText("personalAverageFocus",
+                    data.averageFocus != null ? data.averageFocus + "/5" : "정보 없음"
+                );
+
+                setText("personalCorrectRate",
+                    formatCorrectRate(data.correctRate)
+                );
+
+                setText("personalQuestionCount",
+                    data.questionCount !== undefined ? data.questionCount + "개" : "-"
+                );
+
+                setText("personalFeedbackText", data.personalFeedback);
+            })
+            .catch(error => {
+                setText("personalFeedbackText", "개인화 종합 피드백 데이터를 불러오지 못했습니다.");
+            });
+    }
+
+    function loadLatestStudyQuestion() {
+        ["latestQuestionSubject", "latestQuestionSituation", "latestQuestionUnderstanding"].forEach(id => setText(id, "정보 없음"));
+        setText("latestQuestionOrigin", "사용자 공통 질문 기록 · 제공업체·모델·관련 목표 정보 없음");
+        renderLlmMarkdown("조회 중...", "latestQuestionAdvice");
+        return fetch("/study-questions", {cache: "no-store"})
+            .then(response => {
+                if (!response.ok) throw new Error("질문 조회 실패");
+                return response.json();
+            })
+            .then(data => {
+                if (!Array.isArray(data)) throw new Error("질문 목록 형식 오류");
+                if (data.length === 0) {
+                    setText("latestQuestionText", "저장된 질문이 없습니다.");
+                    renderLlmMarkdown("공부 중 질문 화면에서 질문을 입력하면 여기에 표시됩니다.", "latestQuestionAdvice");
+                    return;
+                }
+
+                data.sort((a, b) => b.questionId - a.questionId);
+
+                const latest = data[0];
+                if (!latest || typeof latest.aiAdvice !== "string") throw new Error("질문 응답 형식 오류");
+
+                setText("latestQuestionSubject", latest.subject);
+                setText("latestQuestionSituation", latest.situation);
+                setText("latestQuestionUnderstanding", latest.understanding);
+                setText("latestQuestionText", latest.question);
+                setText("latestQuestionOrigin", "사용자 공통 질문 기록 · 제공업체·모델·관련 목표 정보 없음 · 저장 시각: " +
+                    (typeof latest.createdAt === "string" ? latest.createdAt.replace("T", " ") : "정보 없음"));
+                renderLlmMarkdown(latest.aiAdvice || "저장된 AI 조언이 없습니다.", "latestQuestionAdvice");
+            })
+            .catch(error => {
+                setText("latestQuestionText", "최근 질문 데이터를 불러오지 못했습니다.");
+                renderLlmMarkdown("-", "latestQuestionAdvice");
+            });
+    }
+
+    function loadSubjectAnalysis() {
+        goalFetch("/subject-analysis")
+            .then(response => response.json())
+            .then(data => {
+                const area = document.getElementById("subjectAnalysisArea");
+                area.replaceChildren();
+
+                if (!data.subjectAnalysis || data.subjectAnalysis.length === 0) {
+                    area.innerText = data.message || "과목별 분석 데이터가 없습니다.";
+                    return;
+                }
+
+                data.subjectAnalysis.forEach(subject => {
+                    const box = document.createElement("div");
+                    box.className = "coaching-box";
+
+                    const title = document.createElement("strong");
+                    title.textContent = String(subject.subjectName);
+                    box.appendChild(title);
+
+                    const details = [
+                        "난이도: " + subject.difficulty,
+                        "중요도: " + subject.priorityLevel,
+                        "현재 자신감: " + subject.currentConfidence,
+                        "공부 기록 수: " + subject.recordCount + "개",
+                        "총 공부 시간: " + subject.totalStudyMinutes + "분",
+                        "평균 이해도: " + (subject.averageUnderstanding == null ? "정보 없음" : Number(subject.averageUnderstanding).toFixed(1)),
+                        "평균 집중도: " + (subject.averageFocus == null ? "정보 없음" : Number(subject.averageFocus).toFixed(1)),
+                        "정답률: " + (
+                            subject.correctRate != null &&
+                            Number.isFinite(Number(subject.correctRate))
+                                ? Number(subject.correctRate).toFixed(1) + "%"
+                                : "정보 없음 (문제풀이 기록 없음)"
+                        )
+                    ];
+                    details.forEach(text => {
+                        const paragraph = document.createElement("p");
+                        paragraph.textContent = text;
+                        box.appendChild(paragraph);
+                    });
+
+                    const analysis = document.createElement("p");
+                    const label = document.createElement("strong");
+                    label.textContent = "분석:";
+                    analysis.append(label, document.createTextNode(" " + subject.analysisMessage));
+                    box.appendChild(analysis);
+
+                    area.appendChild(box);
+                });
+            })
+            .catch(error => {
+                document.getElementById("subjectAnalysisArea").innerText =
+                    "과목별 분석 데이터를 불러오지 못했습니다.";
+            });
+    }
+
+    function loadWeakSubject() {
+        goalFetch("/weak-subject")
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    setText("weakSubjectName", "-");
+                    setText("weakReason", data.message);
+                    setText("weakStrategy", "-");
+                    setText("weakTodayPlan", "-");
+                    return;
+                }
+
+                setText("weakSubjectName", data.weakSubjectName);
+                setNumber("weakAverageUnderstanding", data.averageUnderstanding);
+                setNumber("weakAverageFocus", data.averageFocus);
+                setText("weakCorrectRate", formatCorrectRate(data.correctRate));
+                setText("weakDifficulty", data.difficulty);
+                setText("weakConfidence", data.currentConfidence);
+
+                setText("weakReason", data.reason);
+                setText("weakStrategy", data.strategy);
+                setText("weakTodayPlan", data.todayPlan);
+            })
+            .catch(error => {
+                setText("weakReason", "취약 과목 데이터를 불러오지 못했습니다.");
+            });
+    }
+
+    function formatCorrectRate(value) {
+        if (value === null || value === undefined || value === "") {
+            return "정보 없음";
+        }
+
+        const number = Number(value);
+
+        return Number.isFinite(number)
+            ? number.toFixed(1) + "%"
+            : "정보 없음";
+    }
+
+    function loadTopSummary() {
+        goalFetch("/analysis-summary")
+            .then(response => response.json())
+            .then(analysis => {
+                setText("summaryTotalStudyMinutes",
+                    analysis.totalStudyMinutes !== undefined ? analysis.totalStudyMinutes + "분" : "-"
+                );
+
+                setNumber("summaryAverageUnderstanding", analysis.averageUnderstanding);
+                setNumber("summaryAverageFocus", analysis.averageFocus);
+
+                return goalFetch("/weak-subject");
+            })
+            .then(response => response.json())
+            .then(weak => {
+                if (weak.message) {
+                    setText("summaryWeakSubject", "-");
+                    setText("summaryCorrectRate", "-");
+                    setText("summaryRecommendation", "공부 기록 필요");
+                    return;
+                }
+
+                setText("summaryWeakSubject", weak.weakSubjectName);
+                setText("summaryCorrectRate", formatCorrectRate(weak.correctRate));
+
+                if (weak.recordCount == null || weak.recordCount < 3) {
+                    setText("summaryRecommendation", "학습 기록 추가 필요");
+
+                } else if (
+                    weak.averageUnderstanding != null &&
+                    weak.averageUnderstanding < 3
+                ) {
+                    setText("summaryRecommendation", "개념 복습 우선");
+
+                } else if (
+                    weak.averageFocus != null &&
+                    weak.averageFocus < 3
+                ) {
+                    setText("summaryRecommendation", "집중 시간 조정");
+
+                } else if (
+                    weak.correctRate != null &&
+                    weak.correctRate < 60
+                ) {
+                    setText("summaryRecommendation", "오답 정리 우선");
+
+                } else if (weak.correctRate == null) {
+                    setText("summaryRecommendation", "확인 문제 기록 권장");
+
+                } else {
+                    setText("summaryRecommendation", "현재 흐름 유지");
+                }
+            })
+            .catch(error => {
+                setText("summaryRecommendation", "요약 데이터를 불러오지 못했습니다.");
+            });
+    }
+
+    function loadLlmPromptPreview() {
+        ["llmGoalName", "llmSubjectName", "llmCorrectRate"].forEach(id => setText(id, "정보 없음"));
+        return goalFetch("/llm-prompt-preview")
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    setText("llmPrompt", data.message);
+                    return;
+                }
+
+                setText("llmGoalName", data.goalName);
+                setText("llmSubjectName", data.subjectName);
+                setText("llmCorrectRate", formatCorrectRate(data.correctRate));
+
+                const promptSummary =
+                    "LLM 프롬프트가 자동 생성되었습니다.\n\n" +
+                    "- 목표명: " + data.goalName + "\n" +
+                    "- 과목명: " + data.subjectName + "\n" +
+                    "- 평균 이해도: " + (data.averageUnderstanding == null ? "정보 없음" : Number(data.averageUnderstanding).toFixed(1) + "/5") + "\n" +
+                    "- 평균 집중도: " + (data.averageFocus == null ? "정보 없음" : Number(data.averageFocus).toFixed(1) + "/5") + "\n" +
+                    "- 정답률: " + formatCorrectRate(data.correctRate) + "\n\n" +
+                    "포함 데이터: 목표 정보, 과목 정보, 공부 시간, 이해도, 집중도, 정답률, 오답 원인, 어려웠던 개념\n\n" +
+                    "전체 프롬프트는 /llm-prompt-preview 주소에서 확인할 수 있습니다.";
+
+                setText("llmPrompt", promptSummary);
+            })
+            .catch(error => {
+                setText("llmPrompt", "LLM 프롬프트 데이터를 불러오지 못했습니다.");
+            });
+    }
+
+    // HTML 문자열을 직접 넣지 않고 DOM 요소로만 변환하여 AI 답변을 안전하게 표시합니다.
+    function appendLlmInline(parent, text) {
+        const pattern = /(\*\*(.+?)\*\*|__(.+?)__|`([^`]+)`|\*([^*\n]+)\*|_([^_\n]+)_)/g;
+        let lastIndex = 0;
+        let match;
+        while ((match = pattern.exec(text)) !== null) {
+            if (match.index > lastIndex) {
+                parent.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+            }
+            let element;
+            if (match[2] !== undefined || match[3] !== undefined) {
+                element = document.createElement("strong");
+                element.textContent = match[2] ?? match[3];
+            } else if (match[4] !== undefined) {
+                element = document.createElement("code");
+                element.textContent = match[4];
+            } else {
+                element = document.createElement("em");
+                element.textContent = match[5] ?? match[6];
+            }
+            parent.appendChild(element);
+            lastIndex = pattern.lastIndex;
+        }
+        if (lastIndex < text.length) {
+            parent.appendChild(document.createTextNode(text.slice(lastIndex)));
+        }
+    }
+
+    function renderLlmMarkdown(value, targetId = "realLlmResponse") {
+        const area = document.getElementById(targetId);
+        area.replaceChildren();
+        const lines = String(value ?? "").replace(/\r\n?/g, "\n").split("\n");
+        let paragraph = null;
+        let list = null;
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) {
+                paragraph = null;
+                list = null;
+                continue;
+            }
+
+            const heading = trimmed.match(/^(#{1,6})\s+(.+)$/);
+            if (heading) {
+                paragraph = null;
+                list = null;
+                const tag = "h" + Math.max(2, Math.min(4, heading[1].length));
+                const element = document.createElement(tag);
+                appendLlmInline(element, heading[2]);
+                area.appendChild(element);
+                continue;
+            }
+
+            if (/^(---|\*\*\*|___)$/.test(trimmed)) {
+                paragraph = null;
+                list = null;
+                area.appendChild(document.createElement("hr"));
+                continue;
+            }
+
+            const bullet = trimmed.match(/^[-*+]\s+(.+)$/);
+            const ordered = trimmed.match(/^\d+[.)]\s+(.+)$/);
+            if (bullet || ordered) {
+                paragraph = null;
+                const tag = ordered ? "ol" : "ul";
+                if (!list || list.tagName.toLowerCase() !== tag) {
+                    list = document.createElement(tag);
+                    area.appendChild(list);
+                }
+                const item = document.createElement("li");
+                appendLlmInline(item, (ordered || bullet)[1]);
+                list.appendChild(item);
+                continue;
+            }
+
+            list = null;
+            if (trimmed.startsWith("> ")) {
+                paragraph = null;
+                const quote = document.createElement("blockquote");
+                appendLlmInline(quote, trimmed.slice(2));
+                area.appendChild(quote);
+                continue;
+            }
+
+            if (!paragraph) {
+                paragraph = document.createElement("p");
+                area.appendChild(paragraph);
+            } else {
+                paragraph.appendChild(document.createElement("br"));
+            }
+            appendLlmInline(paragraph, trimmed);
+        }
+    }
+
+    // OpenAI Responses API의 JSON에서 실제 답변 텍스트를 추출합니다.
+    function extractOpenAiText(raw) {
+        try {
+            const parsed = JSON.parse(raw);
+            if (typeof parsed.output_text === "string" && parsed.output_text.trim()) {
+                return parsed.output_text;
+            }
+            const texts = (parsed.output || []).flatMap(item =>
+                (item.content || []).map(part => part.text).filter(t => typeof t === "string")
+            );
+            if (texts.length) return texts.join("\n\n");
+        } catch (error) {
+            // 기존 API 응답 형식이라면 원문을 그대로 표시합니다.
+        }
+        return raw;
+    }
+
+    // 일반 AI 코칭은 버튼을 눌렀을 때 서버 설정에 따라 해당 provider를 호출합니다.
+    function loadRealLlmCoaching() {
+        const button = document.getElementById("realLlmGenerateButton");
+        if (button.disabled) return;
+        button.disabled = true;
+        button.textContent = "AI 코칭 생성 중...";
+        setText("realLlmReady", "호출 중...");
+        return AiCostRequests.generate("DAILY_COACHING","/llm-coaching")
+            .then(data => {
+                if(!data){setText("realLlmStatus","사용자 취소 · API 미호출");setText("realLlmReady","미호출");setText("realLlmMessage","비용 확인을 취소해 생성 요청을 보내지 않았습니다.");renderLlmMarkdown("생성을 취소했습니다. 새 AI 호출은 없습니다.");return;}
+                const isDemoLlm = data.demoMode === true || data.responseSource === "rule";
+                const isMockLlm = isIsolatedAiMockDisplay(data);
+                setText("realLlmModel", isMockLlm ? "격리 Mock · 실제 AI 아님" : isDemoLlm
+                    ? "데모 응답 (실제 AI 모델 미호출)"
+                    : (data.model || "모델 정보 없음"));
+                setText("realLlmStatus", data.apiStatus);
+                setText("realLlmMessage", (data.message || "") + (data.saveWarning ? "\n" + data.saveWarning : ""));
+                setText("realLlmPrompt",
+                    "학습 데이터 기반 프롬프트가 생성되었습니다.\n" +
+                    "목표, 과목, 이해도, 집중도, 정답률, 오답 원인 정보를 LLM에 전달하도록 구성했습니다.\n" +
+                    "프롬프트 조회는 AI를 호출하지 않는 /llm-prompt-preview를 사용하세요. 생성 경로를 조회용으로 다시 열지 마세요."
+                );
+                if (data.llmResponse) {
+                    const status = isMockLlm ? "격리 Mock · 실제 AI 아님" : data.demoMode === true ? "데모 응답 표시" :
+                        data.demoMode === false ? "실제 AI 응답" : "AI 응답 표시";
+                    setText("realLlmReady", status);
+                    renderLlmMarkdown(data.llmResponse);
+                } else if (data.rawResponse) {
+                    setText("realLlmReady", isMockLlm ? "격리 Mock · 실제 AI 아님" : "실제 AI 응답");
+                    renderLlmMarkdown(extractOpenAiText(data.rawResponse));
+                } else {
+                    const isError = /오류|실패|미설정|지원하지/.test(data.apiStatus || "");
+                    setText("realLlmReady", isError ? "호출 실패" : "응답 대기");
+                    renderLlmMarkdown(data.message || "LLM 응답이 없습니다. API 설정을 확인해 주세요.");
+                }
+            })
+            .catch(error => {
+                setText("realLlmStatus", "LLM 코칭 데이터를 불러오지 못했습니다.");
+                setText("realLlmReady", "호출 실패");
+                setText("realLlmMessage", error.message || String(error));
+                renderLlmMarkdown("서버 연결 또는 API 응답 처리 중 오류가 발생했습니다.");
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.textContent = "일반 AI 코칭 다시 생성";
+                refreshAiCostControls();
+            });
+    }
+
+
+    // GPT 주간 코칭은 별도 API로 연결됩니다. GET 미리보기는 외부 AI를 호출하지 않습니다.
+    async function loadGptWeeklyPreview() {
+        const button = document.getElementById("gptWeeklyPreviewButton");
+        const generateButton = document.getElementById("gptWeeklyGenerateButton");
+        if (button.disabled || generateButton.disabled) return;
+        button.disabled = true;
+        generateButton.disabled = true;
+        GptWeeklyCards.reset();
+        setText("gptWeeklyMetrics", "확인 중...");
+        setText("gptWeeklyPrompt", "-");
+        renderLlmMarkdown("미리보기는 AI 응답이 아닙니다. 실제 GPT 호출은 하지 않습니다.", "gptWeeklyResponse");
+        setText("gptWeeklyStatus", "현재 목표의 주간 기록을 확인하고 있습니다. GPT API는 호출하지 않습니다.");
+        try {
+            const response = await goalFetch("/gpt-weekly-coaching/preview", {cache: "no-store"});
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "HTTP " + response.status);
+            if (!data || typeof data !== "object" || Array.isArray(data) || typeof data.apiStatus !== "string") throw new Error("서버 응답 형식이 올바르지 않습니다.");
+            const status = (data.enabled ? "호출 활성화" : "호출 비활성화") +
+                " · API 키 " + (data.apiKeyConfigured ? "설정됨" : "미설정") +
+                " · " + (data.apiStatus || "미리보기 완료");
+            setText("gptWeeklyStatus", status + (data.message ? "\n" + data.message : "") + (data.saveWarning ? "\n" + data.saveWarning : ""));
+            renderGptWeeklyData(data);
+            setText("gptWeeklyPrompt", data.prompt || data.message || "-");
+        } catch (error) {
+            setText("gptWeeklyStatus", "미리보기 오류: " + (error.message || String(error)));
+            setText("gptWeeklyMetrics", "정보를 불러오지 못했습니다. 이전 목표의 수치는 표시하지 않습니다.");
+            setText("gptWeeklyPrompt", "-");
+        } finally {
+            button.disabled = false;
+            generateButton.disabled = false;
+        }
+    }
+
+    function renderGptWeeklyData(data) {
+            setText("gptWeeklyMetrics", "분석 기간: " + (data.periodStart || "-") + " ~ " + (data.periodEnd || "-") +
+                "\n현재 목표: " + (data.goalName || "-") +
+                "\n공부 기록: " + (data.recordCount == null ? "정보 없음" : data.recordCount + "개") +
+                " · " + (data.totalStudyMinutes == null ? "정보 없음" : data.totalStudyMinutes + "분") +
+                "\n평균 이해도: " + (data.averageUnderstanding ?? "기록 없음") +
+                " · 평균 집중도: " + (data.averageFocus ?? "기록 없음") +
+                " · 정답률: " + (data.correctRate == null ? "기록 없음" : data.correctRate + "%") +
+                "\n오늘·내일 저장 계획: " + (data.savedPlanReferenced
+                    ? (data.savedPlanDate || "-") + " / " + (data.savedPlanStatus || "-") +
+                      " / 전체 공부 " + (data.savedPlanStudyMinutes ?? "정보 없음") + "분" +
+                      " / 보충 배정 " + (data.savedPlanCarryoverMinutes ?? "정보 없음") + "분 / 새로운 학습 " + (data.savedPlanNewStudyMinutes ?? "정보 없음") + "분"
+                    : "오늘·내일 저장된 계획 없음 (최근 7일의 FINAL은 아래에서 별도 확인)"));
+            renderWeeklyEvidence(data);
+            GptWeeklyCards.render(data);
+    }
+
+    function renderWeeklyEvidence(data) {
+        const node = document.getElementById("gptWeeklyMetrics");
+        const known = value => value == null ? "정보 없음" : String(value);
+        const weakTopics = Array.isArray(data.weakTopics)
+            ? data.weakTopics.filter(topic => typeof topic === "string" && topic.trim()) : [];
+        let detail = "\n어려웠던 개념: " + (weakTopics.length ? weakTopics.join(", ") : "정보 없음");
+        detail += "\n\n과목별 실제 기록 (기록 없음은 미공부가 아닙니다)";
+        if (Array.isArray(data.subjectMetrics)) {
+            for (const item of data.subjectMetrics) {
+                if (!item || typeof item !== "object") continue;
+                detail += "\n" + known(item.subjectName) + " — " + known(item.studyMinutes) + "분 · 이해도 " + known(item.averageUnderstanding) + " · 집중도 " + known(item.averageFocus);
+            }
+        } else detail += "\n정보 없음";
+        detail += "\n\n날짜별 실제 기록";
+        if (Array.isArray(data.dailyMetrics) && data.dailyMetrics.length) {
+            for (const day of data.dailyMetrics) {
+                if (!day || typeof day !== "object") continue;
+                detail += "\n" + known(day.date) + " — " +
+                    (day.studyMinutes == null ? "정보 없음" : known(day.studyMinutes) + "분") +
+                    (day.recordStatus === "NO_RECORD" ? " · 공부 기록 미입력" : "") +
+                    " · 이해도 " + known(day.averageUnderstanding) + " · 집중도 " + known(day.averageFocus) +
+                    (day.planBasis === "FINAL" ? " · 저장 FINAL 계획 " + known(day.plannedStudyMinutes) + "분 (완료 기록 아님)" : "");
+            }
+        } else detail += "\n정보 없음";
+        const comparison = data.weeklyPlanComparison;
+        detail += "\n\n최근 7일 저장 FINAL: " + known(comparison?.finalPlanDays) + "일 · 계획 합계 " +
+            known(comparison?.knownFinalPlannedMinutes) + "분 (미래의 확정 일정이나 실제 공부량이 아닙니다)";
+        detail += "\n\n계획·기록이 모두 확인된 날짜: " + known(comparison?.comparableDays) + "일" +
+            " · FINAL 계획 " + known(comparison?.comparablePlannedMinutes) + "분 / 실제 기록 " + known(comparison?.comparableActualMinutes) + "분";
+        detail += "\n집중도 변화: " + known(data.focusTrend?.delta) + " · 이해도 변화: " + known(data.understandingTrend?.delta) + " (기록된 첫날·마지막 날 평균 비교)";
+        detail += "\n저장 당시 전체 부족분: " + known(data.savedPlanEvidence?.carryoverTotalPendingMinutes) + "분 · 과목 미확인: " + known(data.savedPlanEvidence?.carryoverUnattributedMinutes) + "분";
+        detail += "\n" + (data.dataLimitations || "누락 값은 추정하지 않습니다. 코칭은 권고이며 FINAL 계획을 변경하지 않습니다.");
+        if (data.savedPlanReadWarning) detail += "\n" + data.savedPlanReadWarning;
+        node.appendChild(document.createTextNode(detail));
+    }
+
+    // POST는 사용자가 직접 클릭하고 유료 호출 확인을 했을 때만 진행합니다.
+    async function generateGptWeekly() {
+        const button = document.getElementById("gptWeeklyGenerateButton");
+        const previewButton = document.getElementById("gptWeeklyPreviewButton");
+        if (button.disabled || previewButton.disabled) return;
+        if (!window.confirm("OpenAI API 사용량에 따라 요금이 발생할 수 있습니다. GPT 코칭을 생성할까요?")) return;
+        button.disabled = true;
+        previewButton.disabled = true;
+        GptWeeklyCards.reset();
+        setText("gptWeeklyMetrics", "최신 기록 확인 중...");
+        setText("gptWeeklyPrompt", "-");
+        setText("gptWeeklyStatus", "GPT-4o-mini 호출 중... (최대 약 45초)");
+        renderLlmMarkdown("응답 대기 중입니다. 이전 코칭은 표시하지 않습니다.", "gptWeeklyResponse");
+        try {
+            const response = await goalFetch("/gpt-weekly-coaching", {
+                method: "POST", headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({confirmPaidCall: true})
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "HTTP " + response.status);
+            if (!data || typeof data !== "object" || Array.isArray(data) || typeof data.apiStatus !== "string") throw new Error("서버 응답 형식이 올바르지 않습니다.");
+            setText("gptWeeklyStatus", (isIsolatedAiMockDisplay(data) ? "격리 Mock · 실제 AI 아님\n" : "") + (data.apiStatus || "상태 확인 필요") +
+                (data.message ? "\n" + data.message : "") + (data.saveWarning ? "\n" + data.saveWarning : ""));
+            renderGptWeeklyData(data);
+            if (data.llmResponse) {
+                renderLlmMarkdown(data.llmResponse, "gptWeeklyResponse");
+            } else {
+                renderLlmMarkdown(data.message || "GPT 응답이 없습니다.", "gptWeeklyResponse");
+            }
+            if (data.prompt) setText("gptWeeklyPrompt", data.prompt);
+        } catch (error) {
+            setText("gptWeeklyStatus", "GPT 생성 실패: " + (error.message || String(error)));
+            setText("gptWeeklyMetrics", "최신 정보를 확인하지 못했습니다. 이전 수치는 표시하지 않습니다.");
+            renderLlmMarkdown("코칭을 받지 못했습니다. 기존 학습 계획은 변경되지 않았습니다.", "gptWeeklyResponse");
+        } finally {
+            button.disabled = false;
+            previewButton.disabled = false;
+        }
+    }
+
+    // 15번 카드: 버튼 클릭 시에만 /study-log-summary를 호출합니다.
+    // loadData()에서는 호출하지 않아 새로고침만으로 무료 API를 소모하지 않습니다.
+    async function generateStudySummary() {
+        const button = document.getElementById("studySummaryButton");
+        if (button.disabled) return;
+
+        button.disabled = true;
+        button.textContent = "요약 생성 중...";
+        setText("studySummaryStatus", "요약 생성 중...");
+        renderLlmMarkdown("Gemini가 공부 기록을 분석하고 있습니다. 잠시 기다려 주세요.", "studySummaryResponse");
+
+        try {
+            const data = await AiCostRequests.generate("STUDY_SUMMARY","/study-log-summary");
+            if(!data){setText("studySummaryStatus","사용자 취소 · API 미호출");renderLlmMarkdown("비용 확인을 취소해 요약 생성 요청을 보내지 않았습니다.","studySummaryResponse");return;}
+            setText("studySummaryModel", data.model);
+            setText("studySummaryCount",
+                data.analyzedRecordCount !== undefined
+                    ? data.analyzedRecordCount + "개"
+                    : data.totalRecordCount !== undefined
+                        ? data.totalRecordCount + "개"
+                        : "-"
+            );
+            setText("studySummaryStatus", (isIsolatedAiMockDisplay(data)?"격리 Mock · 실제 AI 아님 · ":"")+(data.apiStatus || "상태 확인 필요"));
+
+            if (typeof data.summary === "string" && data.summary.trim()) {
+                // Gemini의 마크다운을 HTML 문자열로 삽입하지 않고 안전한 DOM으로 출력합니다.
+                renderLlmMarkdown(data.summary, "studySummaryResponse");
+            } else {
+                renderLlmMarkdown(
+                    data.message || "요약 내용을 받지 못했습니다. 공부 기록이나 API 설정을 확인하세요.",
+                    "studySummaryResponse"
+                );
+            }
+        } catch (error) {
+            setText("studySummaryStatus", "호출 실패");
+            renderLlmMarkdown(
+                "공부 기록 요약을 불러오지 못했습니다. " + (error.message || String(error)),
+                "studySummaryResponse"
+            );
+        } finally {
+            button.disabled = false;
+            button.textContent = "AI 요약 다시 생성";
+            refreshAiCostControls();
+        }
+    }
+
+    // 사용자가 시간을 바꾸면 저장되지 않은 변경사항임을 표시합니다.
+    for (const id of ["scheduleStartInput", "scheduleEndInput", "scheduleBusyStartInput", "scheduleBusyEndInput"]) {
+        document.getElementById(id).addEventListener("input", () => {
+            showSchedulePersistence("설정이 변경됐습니다. '시간표 저장'을 누르면 MySQL에 반영됩니다.", "schedule-unsaved");
+        });
+    }
+
+    // 기존 /study-progress API를 대시보드의 기존 요약 카드 안에 표시합니다.
+    async function loadStudyProgress() {
+        const message = document.getElementById("todayProgressMessage");
+        const details = document.getElementById("todayProgressDetails");
+        try {
+            const response = await goalFetch("/study-progress", {cache: "no-store"});
+            if (!response.ok) throw new Error("HTTP " + response.status);
+            const data = await response.json();
+            if (data.message) {
+                message.textContent = data.message;
+                details.textContent = "학습 기록이나 시간표 설정을 확인해 주세요.";
+                setText("todayProgressRate", "-");
+                return;
+            }
+            const target = Number(data.plannedStudyMinutes) || 0;
+            const actual = Number(data.actualStudyMinutes) || 0;
+            const rate = Number(data.achievementRate) || 0;
+            const noRecord = data.hasStudyRecord === false;
+            const percent = noRecord ? 0 : Math.min(100, Math.max(0, rate));
+            setText("todayProgressRate", noRecord ? "—" : rate.toFixed(1) + "%");
+            document.getElementById("todayProgressFill").style.width = percent + "%";
+            document.getElementById("todayProgressTrack").setAttribute("aria-valuenow", String(Math.round(percent)));
+            if (noRecord) {
+                document.getElementById("todayProgressTrack").removeAttribute("aria-valuenow");
+            }
+            message.textContent = (data.status || "학습 현황") + " · " + (data.studyDate || "오늘");
+            details.textContent = noRecord
+                ? "계획 " + target + "분 · 공부 기록 미입력 · " +
+                    (data.recordStatus === "UNRECORDED" ? "미공부로 단정하지 않습니다." : "아직 학습 진행 중입니다.")
+                : "계획 " + target + "분 · 기록된 공부 " + actual + "분 · 남은 시간 " +
+                    (Number(data.remainingStudyMinutes) || 0) + "분";
+        } catch (error) {
+            message.textContent = "학습 달성률을 가져오지 못했습니다.";
+            details.textContent = "서버의 /study-progress 연결 상태를 확인해 주세요.";
+            setText("todayProgressRate", "-");
+        }
+    }
+
+    // 사용자가 버튼을 누른 경우에만 다음 날 계획을 미리 확인합니다.
+    // 이 API는 학습 데이터 및 재조정 결과를 DB에 저장하지 않습니다.
+    let reschedulePreviewSnapshot = null;
+    const uncertainRescheduleWrites = new Set();
+    async function loadReschedulePreview() {
+        const button = document.getElementById("reschedulePreviewButton");
+        const target = document.getElementById("reschedulePreviewResult");
+        if (button.disabled) return;
+        button.disabled = true;
+        reschedulePreviewSnapshot = null;
+        renderRecordReview("reschedulePreviewReview", {});
+        target.textContent = "내일 학습 계획을 계산하는 중...";
+        try {
+            const response = await goalFetch("/study-reschedule-preview", {cache: "no-store"});
+            if (!response.ok) throw new Error("HTTP " + response.status);
+            const data = await response.json();
+            if (data.message) { target.textContent = data.message; return; }
+            const lines = [
+                "다음 학습일: " + (data.scheduleDate || "-") + " (미리보기)",
+                "총 공부 시간: " + (data.studyMinutes ?? "-") + "분",
+                "미완료 학습 보충: " + (data.carryoverMinutes ?? 0) + "분",
+                "새로운 학습: " + (data.newStudyMinutes ?? 0) + "분",
+                "일정 검증: " + (data.isScheduleValid === true && data.hasConflict === false ? "정상 / 충돌 없음" : "시간표 확인 필요")
+            ];
+            if (data.carryoverSourceDays) lines.push("미완료량 계산에 검토한 기록: " + data.carryoverSourceDays + "일");
+            const notice = noticeWithoutReviewDetails(data.rescheduleNotice);
+            if (notice) lines.push("안내: " + notice);
+            if (data.previewNotice) lines.push("※ " + data.previewNotice);
+            target.textContent = lines.join("\n");
+            renderRecordReview("reschedulePreviewReview", data);
+            await window.StudyPlanCalendar?.showPreview(data);
+            if (data.goalId !== Number(GoalContext.id) || data.previewMode !== true) throw new Error('선택 목표의 미리보기인지 확인할 수 없습니다.');
+            reschedulePreviewSnapshot = data;
+        } catch (error) {
+            target.textContent = "미리보기를 불러오지 못했습니다. " + (error.message || String(error));
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    // 서버가 새로 계산한 내일 계획을 DB에 보관합니다. 공부 종료 전에는 DRAFT입니다.
+    async function saveReschedulePlan() {
+        const button = document.getElementById("rescheduleSaveButton");
+        const queryButton = document.getElementById("rescheduleSavedButton");
+        const dateInput = document.getElementById("savedPlanDateInput");
+        const target = document.getElementById("rescheduleSaveResult");
+        if (button.disabled || queryButton.disabled) return;
+        const preview = reschedulePreviewSnapshot;
+        if (!preview || preview.goalId !== Number(GoalContext.id)) {
+            target.textContent = '먼저 내일 미리보기를 조회하고 대상 목표·날짜를 확인하세요. 저장 요청은 보내지 않았습니다.';
+            return;
+        }
+        const writeKey = GoalContext.id + '/' + preview.scheduleDate;
+        if (uncertainRescheduleWrites.has(writeKey)) {
+            target.textContent = '이 목표·날짜의 저장 결과가 불확실합니다. 다시 저장하지 말고 저장본 GET으로 확인하세요.';
+            return;
+        }
+        if (!window.confirm('목표 ' + GoalContext.id + ' / ' + preview.scheduleDate + '\n보충 ' + preview.carryoverMinutes + '분 · 신규 ' + preview.newStudyMinutes + '분\n기존 같은 날짜의 저장본을 덮어쓸 수 있습니다. 서버가 최신 기록으로 다시 계산하고 DRAFT/FINAL을 결정합니다. 저장할까요?')) return;
+        button.disabled = true;
+        queryButton.disabled = true;
+        dateInput.disabled = true;
+        renderRecordReview("rescheduleSavedReview", {});
+        target.textContent = "내일 계획을 다시 계산하고 MySQL에 저장 중...";
+        try {
+            const response = await goalFetch("/study-reschedule-save", {method: "POST"});
+            const data = await response.json();
+            if (!response.ok || data.saved !== true) {
+                throw new Error(data.message || "저장 실패 (HTTP " + response.status + ")");
+            }
+            if (!["DRAFT", "FINAL"].includes(data.planStatus) || data.planDate !== preview.scheduleDate || !/^\d{4}-\d{2}-\d{2}$/.test(data.planDate || "")) {
+                throw new Error("저장 응답 형식을 확인할 수 없습니다. 재저장 전에 저장된 계획을 조회해 주세요.");
+            }
+            target.textContent = "✓ 저장 성공 (" + (data.planStatus === "FINAL" ? "최종 저장" : "임시 저장") + ")\n" +
+                "날짜: " + (data.planDate || "-") + "\n" +
+                "전체 공부: " + (data.studyMinutes ?? "-") + "분 · 보충: " +
+                (data.carryoverMinutes ?? 0) + "분 · 새로운 학습: " +
+                (data.newStudyMinutes ?? 0) + "분\n" + (data.message || "");
+            dateInput.value = data.planDate;
+            reschedulePreviewSnapshot = null;
+            queryButton.disabled = false;
+            await loadSavedReschedulePlan(target.textContent);
+        } catch (error) {
+            uncertainRescheduleWrites.add(writeKey);
+            target.textContent = "⚠ 저장 처리 실패 또는 응답 불확실: " + (error.message || String(error)) + '\n자동 재전송하지 않습니다. 저장본 GET으로 확인하세요.';
+        } finally {
+            button.disabled = false;
+            queryButton.disabled = false;
+            dateInput.disabled = false;
+        }
+    }
+
+    async function loadSavedReschedulePlan(confirmedSaveMessage = "") {
+        const button = document.getElementById("rescheduleSavedButton");
+        const saveButton = document.getElementById("rescheduleSaveButton");
+        const dateInput = document.getElementById("savedPlanDateInput");
+        const target = document.getElementById("rescheduleSaveResult");
+        if (button.disabled) return;
+        button.disabled = true;
+        saveButton.disabled = true;
+        dateInput.disabled = true;
+        renderRecordReview("rescheduleSavedReview", {});
+        target.textContent = "MySQL에 저장한 학습 계획 확인 중...";
+        try {
+            const query = "?goalId=" + encodeURIComponent(GoalContext.id) + (dateInput.value ? "&date=" + encodeURIComponent(dateInput.value) : "");
+            const response = await goalFetch("/study-reschedule-saved" + query, {cache: "no-store"});
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "조회 실패");
+            if (data.saved !== true) {
+                target.textContent = (confirmedSaveMessage ? confirmedSaveMessage + "\n⚠ 저장 후 재조회에서 계획을 확인하지 못했습니다. " : "") +
+                    (data.message || "저장된 계획이 없습니다.");
+                return;
+            }
+            target.textContent = (confirmedSaveMessage ? confirmedSaveMessage + "\n\n" : "") + "✓ MySQL 저장 확인\n" +
+                "계획 날짜: " + (data.scheduleDate || "-") + "\n" +
+                "저장 상태: " + (data.planStatus === "FINAL" ? "최종" : data.planStatus === "DRAFT" ? "임시" : "정보 없음") + "\n" +
+                "전체 공부: " + (data.studyMinutes ?? "-") + "분 · 보충: " +
+                (data.carryoverMinutes ?? 0) + "분 · 새로운 학습: " +
+                (data.newStudyMinutes ?? 0) + "분\n" +
+                (data.warning || "서버 재시작 후에도 동일한 계획을 조회할 수 있습니다.");
+            renderRecordReview("rescheduleSavedReview", data, true);
+            await window.StudyPlanCalendar?.showSaved(data, Boolean(confirmedSaveMessage));
+        } catch (error) {
+            target.textContent = (confirmedSaveMessage ? confirmedSaveMessage + "\n⚠ 저장은 성공했지만 재조회하지 못했습니다: " : "⚠ 저장된 시간표 확인 실패: ") +
+                (error.message || String(error));
+        } finally {
+            button.disabled = false;
+            saveButton.disabled = false;
+            dateInput.disabled = false;
+        }
+    }
+
+    // 탭마다 필요한 데이터만 로드합니다. 불필요한 API 요청/AI 사용량을 줄입니다.
+    const knownSections = ["dashboard", "plan", "analysis", "ai", "settings"];
+    const loadedSections = new Set();
+    let activeSection = "dashboard";
+    const pageMeta = {
+        dashboard: ["대시보드", "오늘 공부 현황과 학습 목표를 한눈에 확인합니다."],
+        plan: ["학습 계획", "오늘의 학습 순서, 시간표, 자동 재조정 기능을 관리합니다."],
+        analysis: ["학습 분석", "현재 학습 목표의 기록을 기준으로 과목별 분석과 취약 과목 추천을 확인합니다."],
+        ai: ["AI 코칭", "개인화 피드백, Gemini 학습 요약, GPT 주간 코칭을 확인합니다."],
+        settings: ["설정 · 정보", "과목 설정 정보와 개발용 LLM 프롬프트를 확인합니다."]
+    };
+
+    function loadSectionData(section, refreshCalendar = false) {
+        if (!goalReady) return;
+        if (section === "dashboard") {
+            window.StudyPlanCalendar?.load(refreshCalendar);
+            loadTopSummary();
+            loadAiCoaching();
+            loadStudyProgress();
+        } else if (section === "plan") {
+            window.StudyPlanCalendar?.load(refreshCalendar);
+            loadSavedStudySchedule();
+            loadAutoReschedule();
+            loadSavedReschedulePlan();
+        } else if (section === "analysis") {
+            loadAnalysisSummary();
+            loadSubjectAnalysis();
+            StudyAnalysisCharts.load();
+            loadWeakSubject();
+            ReviewPriority.load();
+        } else if (section === "ai") {
+            loadInitialCoaching();
+            loadPersonalFeedback();
+            loadLatestStudyQuestion();
+            loadAiCoaching();
+            // Gemini 요약 및 LLM 코칭은 각 버튼에서만 실행합니다.
+        } else if (section === "settings") {
+            loadAiCoaching();
+            loadLlmPromptPreview();
+        }
+    }
+
+    function showDashboardTab(section, changeUrl = true) {
+        if (!knownSections.includes(section)) section = "dashboard";
+        const previous = activeSection;
+        activeSection = section;
+        document.querySelectorAll(".card[data-section], .dashboard-quick-links[data-section]").forEach(element => {
+            element.classList.toggle("is-visible", element.dataset.section.split(/\s+/).includes(section));
+        });
+        document.querySelectorAll(".dashboard-nav .nav-button").forEach(button => {
+            const selected = button.dataset.tab === section;
+            button.classList.toggle("is-active", selected);
+            button.setAttribute("aria-pressed", String(selected));
+        });
+        setText("currentPageTitle", pageMeta[section][0]);
+        setText("currentPageDescription", pageMeta[section][1]);
+        if (changeUrl) {
+            history.replaceState(null, "", location.pathname + location.search + "#" + section);
+            if (previous !== section) window.scrollTo({top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+        }
+        if (!loadedSections.has(section)) {
+            loadedSections.add(section);
+            loadSectionData(section);
+        }
+    }
+
+    function loadData() {
+        loadSectionData(activeSection, true);
+        loadedSections.add(activeSection);
+    }
+
+    // 공부 기록 입력 후 뒤로 가기로 복원된 화면은 오래된 카드/AI 응답을 재사용하지 않습니다.
+    window.addEventListener("pageshow", event => {
+        if (event.persisted) location.reload();
+    });
+
+    initializeGoalPicker().then(ready => {
+        goalReady = ready;
+        if (!ready) document.querySelectorAll('.card p, .card .llm-markdown').forEach(element => {
+            if (element.textContent.trim().startsWith('불러오는 중')) element.textContent = '현재 사용할 목표를 먼저 선택하세요.';
+        });
+        loadedSections.clear();
+        showDashboardTab(location.hash.slice(1) || "dashboard", false);
+    });
+</script>
+
+<script src="/ai-response-history.js"></script>
+</body>
+</html>

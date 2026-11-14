@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <script src="/auth-client.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AI 공부 플래너</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background-color: #2563eb;
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 36px;
+        }
+
+        .header p {
+            margin-top: 12px;
+            font-size: 18px;
+        }
+
+        .container {
+            width: 950px;
+            margin: 40px auto;
+        }
+
+        .intro {
+            background-color: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+        }
+
+        .intro h2 {
+            color: #2563eb;
+            margin-top: 0;
+        }
+
+        .flow {
+            background-color: #eef2ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background-color: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
+            text-align: center;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 230px;
+        }
+
+        .card h3 {
+            color: #2563eb;
+            margin-top: 0;
+        }
+
+        .card p {
+            color: #555;
+            line-height: 1.6;
+            flex-grow: 1;
+        }
+
+        .card a {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 12px 18px;
+            background-color: #2563eb;
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            align-self: center;
+        }
+
+        .card a:hover {
+            background-color: #1d4ed8;
+        }
+
+        .footer {
+            text-align: center;
+            color: #777;
+            margin-top: 40px;
+            padding-bottom: 30px;
+        }
+        @media (max-width: 1000px) {
+            .container { width: auto; max-width: 100%; margin: 16px; box-sizing: border-box; }
+            .header { padding: 24px 16px; }
+            .menu-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .flow { flex-wrap: wrap; }
+        }
+    </style>
+    <link rel="stylesheet" href="/ui-polish.css">
+</head>
+<body>
+
+<div class="header">
+    <h1>AI 공부 플래너</h1>
+    <p>학습 데이터를 기반으로 개인 맞춤형 공부 전략을 제공하는 웹 시스템</p>
+</div>
+
+<div class="container">
+
+    <div class="intro">
+        <h2>프로젝트 개요</h2>
+        <p>
+            AI 공부 플래너는 사용자의 목표, 과목 정보, 공부 기록을 저장하고 분석하여
+            개인에게 맞는 학습 방향과 코칭을 제공하는 웹 기반 학습 관리 시스템입니다.
+        </p>
+
+        <div class="flow">
+            학습 목표 설정 → 공부 기록 저장 → 공부 중 질문 → 학습 분석 → 자동 재조정 → 개인화 피드백 → 대시보드 확인
+        </div>
+    </div>
+
+    <div class="menu-grid">
+        <div class="card">
+            <h3>학습 목표 설정</h3>
+            <p>
+                학습 목표, 시험일, 현재 수준, 과목별 난이도와 자신감을 입력합니다.
+            </p>
+            <a href="/survey-form.html">목표 설정하기</a>
+        </div>
+
+        <div class="card">
+            <h3>공부 기록 입력</h3>
+            <p>
+                공부 시간, 이해도, 집중도, 오답 원인, 어려웠던 개념을 기록합니다.
+            </p>
+            <a href="/study-log-form.html">공부 기록하기</a>
+        </div>
+
+        <div class="card">
+            <h3>공부 중 질문</h3>
+            <p>
+                공부 중 이해되지 않는 내용을 입력하면 상황에 맞는 학습 조언을 제공합니다.
+            </p>
+            <a href="/study-question.html">AI 조언 받기</a>
+        </div>
+
+        <div class="card">
+            <h3>대시보드</h3>
+            <p>
+                누적 학습 분석 결과와 AI 코칭 결과를 한 화면에서 확인합니다.
+            </p>
+            <a href="/dashboard.html">대시보드 보기</a>
+        </div>
+    </div>
+
+    <div class="intro" style="margin-top: 25px;">
+        <h2>현재 구현된 주요 기능</h2>
+        <p>
+            MySQL 데이터베이스 저장, Spring Boot REST API, 학습 목표 설정,
+            공부 기록 저장 및 검증, 학습 데이터 분석, 과목별 분석,
+            취약 과목 추천, 목표 미달 시 자동 재조정,
+            공부 중 질문 및 AI 조언, 초기 학습 코칭,
+            개인화 종합 피드백, 대시보드 출력 기능을 구현했습니다.
+        </p>
+    </div>
+
+</div>
+
+<div class="footer">
+    ICT 종합설계 | AI 공부 플래너 | 김준오
+</div>
+
+</body>
+</html>

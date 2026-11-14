@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <script src="/auth-client.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>공부 중 질문 / AI 조언</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6fb;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #222;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d8deef;
+            border-radius: 8px;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background-color: #2f6bff;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #1f55d8;
+        }
+
+        button:disabled {
+            cursor: wait;
+            opacity: 0.65;
+        }
+
+        .result-box {
+            background-color: #f7f9ff;
+            border-left: 5px solid #2f6bff;
+            padding: 18px;
+            border-radius: 10px;
+            margin-top: 20px;
+            line-height: 1.7;
+            overflow-wrap: anywhere;
+        }
+
+        .result-meta {
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #dce5f8;
+        }
+
+        .result-field {
+            margin-bottom: 12px;
+        }
+
+        .result-field strong {
+            display: block;
+            color: #1e40af;
+            margin-bottom: 3px;
+        }
+
+        .result-field p {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+
+        .result-box .answer-label {
+            color: #1e40af;
+            font-size: 19px;
+            margin: 8px 0 14px;
+        }
+
+        .answer-markdown {
+            white-space: normal;
+            line-height: 1.8;
+        }
+
+        .answer-markdown h3,
+        .answer-markdown h4,
+        .answer-markdown h5 {
+            margin: 22px 0 8px;
+            color: #1d4ed8;
+            line-height: 1.45;
+        }
+
+        .answer-markdown h3 { font-size: 19px; }
+        .answer-markdown h4 { font-size: 17px; }
+        .answer-markdown h5 { font-size: 16px; }
+
+        .answer-markdown p {
+            margin: 8px 0 13px;
+        }
+
+        .answer-markdown ul,
+        .answer-markdown ol {
+            margin: 8px 0 14px;
+            padding-left: 25px;
+        }
+
+        .answer-markdown li {
+            margin: 4px 0;
+        }
+
+        .answer-markdown hr {
+            border: 0;
+            border-top: 1px solid #dce5f8;
+            margin: 18px 0;
+        }
+
+        .answer-markdown blockquote {
+            margin: 12px 0;
+            padding: 7px 14px;
+            border-left: 3px solid #93b4fa;
+            background: #eef4ff;
+        }
+
+        .answer-markdown code {
+            background: #e9eef9;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: Consolas, monospace;
+        }
+
+        .answer-markdown pre {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            background: #e9eef9;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .answer-markdown pre code {
+            padding: 0;
+        }
+
+        .model-panel {
+            margin: 16px 0 6px;
+            background: #f7f9ff;
+            border: 1px solid #d8deef;
+            border-radius: 10px;
+            padding: 14px;
+        }
+        .model-panel .model-label { margin: 0 0 9px; font-weight: bold; }
+        .model-choice-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .model-option {
+            width: 100%; margin: 0; padding: 12px 9px;
+            border: 1px solid #cbd5e1; border-radius: 9px;
+            background: #fff; color: #334155;
+            font-size: 15px; font-weight: 700;
+            transition: background-color .15s, border-color .15s;
+        }
+        .model-option:hover:not(:disabled) { background: #eaf1ff; color: #1d4ed8; }
+        .model-option[aria-pressed="true"],
+        .model-option[aria-pressed="true"]:hover:not(:disabled) {
+            color: #fff; border-color: #2f6bff; background: #2f6bff;
+        }
+        .model-option:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+        .model-option:disabled { cursor: not-allowed; opacity: .6; }
+        .model-hint { font-size: 13px; color: #475569; margin: 10px 0 0; }
+        .answer-origin {
+            padding: 8px 11px; margin-bottom: 12px; border-radius: 7px;
+            background: #e5efff; color: #1e40af; font-weight: bold;
+        }
+        .answer-origin.rule { background: #fff2df; color: #92400e; }
+        .save-warning { color: #92400e; font-size: 13px; }
+        .button-area {
+            text-align: center;
+        }
+
+        .sub-button {
+            background-color: #555;
+            margin-left: 8px;
+        }
+
+        .sub-button:hover {
+            background-color: #333;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+        .container, .card, .result-meta, .result-field { min-width: 0; }
+        .result-box { text-align: left; font-size: 16px; }
+        .result-meta {
+            background: #fff; border: 1px solid #dce5f8; border-radius: 12px;
+            padding: 16px; margin-bottom: 18px;
+        }
+        .result-meta .result-field:last-child { margin-bottom: 0; }
+        .answer-markdown { text-align: left; font-size: 16px; overflow-wrap: anywhere; }
+        .ai-response-body {
+            padding: 18px; background: #fff; border: 1px solid #dce5f8;
+            border-radius: 12px; animation: answer-appear .18s ease-out;
+        }
+        .history-area { text-align: left; }
+        button { max-width: 100%; white-space: normal; overflow-wrap: anywhere;
+            transition: background-color .15s, border-color .15s, transform .15s; }
+        button:hover:not(:disabled) { transform: translateY(-1px); }
+        button:active:not(:disabled) { transform: translateY(1px); }
+        button:focus-visible, summary:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+        .sub-button { background: #eef4ff; color: #1e40af; border: 1px solid #cbd5e1; margin-left: 0; }
+        .sub-button:hover:not(:disabled) { background: #dce9ff; }
+        .model-option { transition: background-color .15s, border-color .15s, transform .15s; }
+        #submitButton[data-request-busy="true"]::after, #historyButton:disabled::after {
+            content: ''; display: inline-block; width: 12px; height: 12px; margin-left: 8px;
+            border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+            animation: answer-spin .8s linear infinite;
+        }
+        @keyframes answer-appear { from { opacity: .5; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+        @keyframes answer-spin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) {
+            button, .model-option { transition: none; }
+            button:hover:not(:disabled), button:active:not(:disabled) { transform: none; }
+            .ai-response-body, #submitButton[data-request-busy="true"]::after, #historyButton:disabled::after { animation: none; }
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 16px; }
+            .card { padding: 18px; }
+            .result-box, .result-meta, .ai-response-body { padding: 12px; }
+            .history-area > button { width: 100%; }
+        }
+    </style>
+    <link rel="stylesheet" href="/ui-polish.css">
+</head>
+
+<body>
+<div class="container">
+    <h1>공부 중 질문 / AI 조언</h1>
+
+    <div class="card">
+        <h2>질문 입력</h2>
+
+        <label for="subject">과목</label>
+        <input type="text" id="subject" placeholder="예: 운영체제, 회로이론, 데이터베이스">
+
+        <label for="situation">현재 상황</label>
+        <select id="situation">
+            <option value="개념 공부 중">개념 공부 중</option>
+            <option value="문제 풀이 중">문제 풀이 중</option>
+            <option value="오답 정리 중">오답 정리 중</option>
+            <option value="시험 준비 중">시험 준비 중</option>
+            <option value="복습 중">복습 중</option>
+        </select>
+
+        <label for="understanding">이해도</label>
+        <select id="understanding">
+            <option value="낮음">낮음</option>
+            <option value="보통">보통</option>
+            <option value="높음">높음</option>
+        </select>
+
+        <div class="model-panel">
+            <p class="model-label" id="modelChoiceLabel">답변을 생성할 AI 모델</p>
+            <div class="model-choice-row" role="group" aria-labelledby="modelChoiceLabel" aria-describedby="modelHint">
+                <button type="button" class="model-option" data-ai-provider="gemini" aria-pressed="true">Gemini</button>
+                <button type="button" class="model-option" data-ai-provider="gpt" aria-pressed="false">GPT-4o-mini</button>
+            </div>
+            <!-- 기존 API 요청 코드가 참조하는 모델 상태는 그대로 유지합니다. -->
+            <select id="aiProvider" hidden aria-hidden="true" tabindex="-1">
+                <option value="gemini">Gemini (기본)</option>
+                <option value="gpt">GPT-4o-mini</option>
+            </select>
+            <p id="modelHint" class="model-hint">모델 상태 확인 중... 실제 API 호출 시 비용이 발생할 수 있습니다.</p>
+        </div>
+
+        <label for="question">질문 내용</label>
+        <textarea id="question" placeholder="예: 운영체제에서 프로세스와 스레드 차이가 헷갈려요."></textarea>
+
+        <button id="submitButton" type="button" onclick="sendQuestion()">선택한 AI에 질문하기</button>
+
+        <div id="result" class="result-box" aria-live="polite">질문을 입력하면 AI 학습 조언이 표시됩니다.</div>
+    </div>
+
+    <div class="button-area card history-area">
+        <button id="historyButton" type="button" onclick="loadLatestSavedQuestion()" class="sub-button">저장된 최근 질문 다시 보기 (API 호출 없음)</button>
+        <details data-ai-history="QUESTION">
+            <summary>출처가 저장된 AI 질문 응답</summary>
+            <button type="button" class="sub-button">최근 저장 응답 조회 (API 호출 없음)</button>
+            <div data-history-output role="status">선택한 목표가 있으면 해당 목표의 응답만 조회합니다.</div>
+        </details>
+        <button type="button" onclick="location.href='/'" class="sub-button">메인으로</button>
+        <button type="button" onclick="location.href='/dashboard.html'" class="sub-button">대시보드로</button>
+    </div>
+</div>
+
+<script>
+    let questionRequestBusy = false;
+    let questionOutcomeUncertain = false;
+    function questionReady(provider) {
+        const caps = window.questionCapabilities;
+        const settings = caps?.[provider];
+        return caps?.goalScopedResponse === true && settings?.enabled === true && settings?.configured === true &&
+            (provider === "gpt" ? settings.model === "gpt-4o-mini" : provider === "gemini" && typeof settings.model === "string" && settings.model.startsWith("gemini-"));
+    }
+    // AI 응답을 HTML 문자열로 삽입하지 않고 텍스트 노드로 구성해 안전하게 표시합니다.
+    function renderMarkdown(text, target) {
+        AiResponseHistory.renderMarkdown(text, target);
+    }
+
+    function showMessage(message) {
+        document.getElementById("result").textContent = message;
+    }
+
+    async function loadLatestSavedQuestion() {
+        const button = document.getElementById("historyButton");
+        const submit = document.getElementById("submitButton");
+        if (button.disabled || questionRequestBusy) return;
+        button.disabled = true;
+        submit.disabled = true;
+        showMessage("저장된 질문을 조회하고 있습니다. 외부 AI는 호출하지 않습니다.");
+        try {
+            const response = await fetch("/study-questions", {cache: "no-store"});
+            if (!response.ok) throw new Error(response.status === 401
+                ? "로그인이 필요합니다." : "질문 기록을 조회하지 못했습니다.");
+            const rows = await response.json();
+            if (!Array.isArray(rows)) throw new Error("질문 기록 응답 형식을 확인할 수 없습니다.");
+            if (!rows.length) { showMessage("저장된 질문이 없습니다."); return; }
+            const latest = rows.slice().sort((a, b) => b.questionId - a.questionId)[0];
+            if (!latest || typeof latest.aiAdvice !== "string" || typeof latest.question !== "string")
+                throw new Error("질문 기록 응답 형식을 확인할 수 없습니다.");
+            const result = document.getElementById("result");
+            result.replaceChildren();
+            // Old rows do not contain provider/model/goal metadata. Never infer it from answer text.
+            const meta = document.createElement("div");
+            meta.className = "result-meta";
+            result.appendChild(meta);
+            addResultField(meta, "저장된 질문", latest.question);
+            addResultField(meta, "과목", latest.subject);
+            addResultField(meta, "응답 출처", "제공업체·모델·응답 유형·관련 목표 정보 없음 (사용자 공통 기록)");
+            addResultField(meta, "저장 시각", typeof latest.createdAt === "string" ? latest.createdAt.replace("T", " ") : "정보 없음");
+            const answer = document.createElement("div");
+            answer.className = "answer-markdown ai-response-body";
+            renderMarkdown(latest.aiAdvice, answer);
+            result.appendChild(answer);
+        } catch (error) {
+            showMessage(error instanceof SyntaxError ? "질문 기록 응답 형식을 확인할 수 없습니다." :
+                error instanceof TypeError ? "서버에 연결하지 못했습니다. 입력 내용은 유지됩니다." : error.message);
+        } finally {
+            button.disabled = false;
+            submit.disabled = questionOutcomeUncertain || !questionReady(document.getElementById("aiProvider").value);
+        }
+    }
+
+    function addResultField(parent, label, value) {
+        const field = document.createElement("div");
+        field.className = "result-field";
+
+        const title = document.createElement("strong");
+        title.textContent = label;
+
+        const content = document.createElement("p");
+        content.textContent = value || "-";
+
+        field.append(title, content);
+        parent.appendChild(field);
+    }
+
+    function matchesQuestionSource(data, provider) {
+        if (data.requestedProvider !== provider) return false;
+        if (data.responseSource === "rule") {
+            return provider === "gemini" && data.answerSource === "rule" && data.model === "rule-based";
+        }
+        if (data.responseSource !== "provider" || data.answerSource !== provider || typeof data.model !== "string") return false;
+        if (data.responseModel != null && (typeof data.responseModel !== "string" ||
+                (data.responseModel !== data.model && !data.responseModel.startsWith(data.model + "-")))) return false;
+        const configured = window.questionCapabilities?.[provider]?.model;
+        if (configured && data.model !== configured) return false;
+        return provider === "gpt" ? data.model === "gpt-4o-mini" : data.model.startsWith("gemini-");
+    }
+
+    function showAnswer(data) {
+        const result = document.getElementById("result");
+        result.replaceChildren();
+
+        const meta = document.createElement("div");
+        meta.className = "result-meta";
+        addResultField(meta, "과목", data.subject);
+        addResultField(meta, "현재 상황", data.situation);
+        addResultField(meta, "질문", data.question);
+        result.appendChild(meta);
+
+        const origin = document.createElement("div");
+        origin.className = "answer-origin" + (data.answerSource === "rule" ? " rule" : "");
+        const requestedName = data.requestedProvider === "gpt" ? "GPT-4o-mini" : "Gemini";
+        origin.textContent = data.testMode === "AI_MOCK_H2_ONLY" && data.mockResponse === true
+            ? "격리 Mock · 실제 AI 아님 · " + requestedName
+            : data.responseSource === "provider"
+            ? "실제 AI 응답 · " + requestedName + " · " + (data.model || "모델 정보 없음")
+            : "규칙 기반 대체 조언 · 실제 " + requestedName + " 응답 아님";
+        result.appendChild(origin);
+        if (data.apiStatus) {
+            const status = document.createElement("p");
+            status.textContent = "상태: " + data.apiStatus;
+            result.appendChild(status);
+        }
+        const label = document.createElement("h3");
+        label.className = "answer-label";
+        label.textContent = "AI 조언";
+        result.appendChild(label);
+
+        const answer = document.createElement("div");
+        answer.className = "answer-markdown ai-response-body";
+        renderMarkdown(data.aiAdvice, answer);
+        result.appendChild(answer);
+        if (data.saveWarning) {
+            const warning = document.createElement("p");
+            warning.className = "save-warning";
+            warning.textContent = data.saveWarning;
+            result.appendChild(warning);
+        }
+    }
+
+    async function loadProviderCapabilities() {
+        const hint = document.getElementById("modelHint");
+        const provider = document.getElementById("aiProvider").value;
+        try {
+            const response = await fetch("/study-question/capabilities", { cache: "no-store" });
+            if (!response.ok) throw new Error("HTTP " + response.status);
+            const capabilities = await response.json();
+            window.questionCapabilities = capabilities;
+        } catch (_) {
+            window.questionCapabilities = null;
+        }
+        updateProviderHint();
+    }
+
+    function updateProviderHint() {
+        const provider = document.getElementById("aiProvider").value;
+        const hint = document.getElementById("modelHint");
+        const settings = window.questionCapabilities && window.questionCapabilities[provider];
+        document.getElementById("submitButton").disabled = questionRequestBusy || document.getElementById("historyButton").disabled || questionOutcomeUncertain || !questionReady(provider);
+        if (questionOutcomeUncertain) {
+            hint.textContent = "이전 요청의 호출·저장 결과 확인이 필요합니다. 이력은 조회할 수 있으며 새 생성 요청은 차단합니다.";
+        } else if (window.questionCapabilities?.goalScopedResponse !== true) {
+            hint.textContent = "서버 업데이트 필요 · 목표별 질문 응답 계약을 확인할 수 없어 생성을 차단합니다.";
+        } else if (!settings) {
+            hint.textContent = "서버의 모델 연결 상태를 확인할 수 없어 생성을 차단합니다.";
+        } else if (!settings.enabled || !settings.configured) {
+            hint.textContent = (provider === "gpt" ? "GPT-4o-mini" : "Gemini")
+                + " 호출이 현재 비활성화되었거나 API 키가 없습니다. 설정 확인이 필요합니다.";
+        } else {
+            hint.textContent = "선택 모델: " + settings.model
+                + " · 실제 외부 API 사용 · 비용 발생 가능 · 자동 재시도 없음";
+        }
+    }
+
+    function syncProviderButtons() {
+        const selected = document.getElementById("aiProvider").value;
+        for (const button of document.querySelectorAll(".model-option")) {
+            button.setAttribute("aria-pressed", String(button.dataset.aiProvider === selected));
+        }
+    }
+
+    function setProviderButtonsDisabled(disabled) {
+        for (const button of document.querySelectorAll(".model-option")) {
+            button.disabled = disabled;
+        }
+    }
+
+    for (const button of document.querySelectorAll(".model-option")) {
+        button.addEventListener("click", () => {
+            if (questionRequestBusy || questionOutcomeUncertain || document.getElementById("historyButton").disabled) return;
+            const select = document.getElementById("aiProvider");
+            select.value = button.dataset.aiProvider;
+            select.dispatchEvent(new Event("change"));
+        });
+    }
+    document.getElementById("aiProvider").addEventListener("change", () => {
+        syncProviderButtons();
+        updateProviderHint();
+    });
+    syncProviderButtons();
+    loadProviderCapabilities();
+
+    function sendQuestion() {
+        const subject = document.getElementById("subject").value.trim();
+        const situation = document.getElementById("situation").value;
+        const understanding = document.getElementById("understanding").value;
+        const question = document.getElementById("question").value.trim();
+        const provider = document.getElementById("aiProvider").value;
+
+        if (!question) {
+            showMessage("질문 내용을 입력해야 합니다.");
+            return;
+        }
+
+        if (question.length > 3000) {
+            showMessage("질문은 3000자 이내로 입력해 주세요.");
+            return;
+        }
+        const submitButton = document.getElementById("submitButton");
+        if (questionRequestBusy || questionOutcomeUncertain || document.getElementById("historyButton").disabled || submitButton.disabled || !questionReady(provider)) return;
+        if (typeof GoalContext === "undefined" || !GoalContext.validId(GoalContext.id)) {
+            showMessage("대시보드에서 질문할 학습 목표를 먼저 선택하세요."); return;
+        }
+        const selectedGoalId = Number(GoalContext.id);
+        const providerLabel = provider === "gpt" ? "GPT-4o-mini" : "Gemini";
+        if (!window.confirm(providerLabel + "에 질문을 전송할까요?\n외부 API 사용으로 비용이 발생할 수 있으며, 오류가 나도 자동 재시도하지 않습니다.")) {
+            return;
+        }
+        submitButton.dataset.requestBusy = "true";
+        submitButton.disabled = true;
+        questionRequestBusy = true;
+        submitButton.textContent = providerLabel + " 답변 생성 중...";
+        document.getElementById("aiProvider").disabled = true;
+        setProviderButtonsDisabled(true);
+        showMessage(providerLabel + "에 질문을 보내고 있습니다. 중복 전송하지 마세요...");
+
+        const questionUrl = GoalContext.url("/study-question");
+        let correctionAllowed = false;
+        fetch(questionUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ subject, situation, understanding, question,
+                provider, confirmPaidCall: true })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    correctionAllowed = [400, 401, 403, 404, 422].includes(response.status);
+                    const error = new Error("Question request failed");
+                    const messages = {
+                        400: "질문 입력값을 확인해 주세요.",
+                        401: "로그인이 만료되었습니다. 다시 로그인해 주세요.",
+                        403: "권한 또는 보안 토큰을 확인해 주세요. 다시 로그인하면 갱신됩니다.",
+                        429: "요청이 너무 많습니다. 잠시 기다린 뒤 이용해 주세요."
+                    };
+                    error.userMessage = (messages[response.status] || "서버에서 질문 처리를 완료하지 못했습니다.")
+                        + " 입력은 유지됩니다. 자동 재시도하지 않았습니다. 응답이 불확실하면 호출·과금 여부를 먼저 확인하세요.";
+                    throw error;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data || typeof data !== "object" || Array.isArray(data)) {
+                    throw new Error("Invalid question response");
+                }
+                if (typeof data.message === "string" && data.message.trim()) {
+                    questionOutcomeUncertain = data.responseSource !== "not_called";
+                    showMessage(data.message);
+                } else if (typeof data.aiAdvice === "string" && data.aiAdvice.trim()
+                        && data.goalId === selectedGoalId && data.question === question
+                        && matchesQuestionSource(data, provider)) {
+                    questionOutcomeUncertain = data.responseSaved === false || data.saved === false;
+                    showAnswer(data);
+                } else {
+                    throw new Error("Incomplete or mismatched question response");
+                }
+            })
+            .catch(error => {
+                questionOutcomeUncertain = !correctionAllowed;
+                showMessage(error.userMessage || "서버 응답을 확인할 수 없습니다. 입력은 유지됩니다. 자동 재시도하지 않았습니다. 새 요청 전에 호출·과금 여부를 확인해 주세요.");
+            })
+            .finally(() => {
+                questionRequestBusy = false;
+                delete submitButton.dataset.requestBusy;
+                submitButton.disabled = questionOutcomeUncertain || !questionReady(provider);
+                document.getElementById("aiProvider").disabled = false;
+                setProviderButtonsDisabled(false);
+                submitButton.textContent = "선택한 AI에 질문하기";
+                updateProviderHint();
+            });
+    }
+</script>
+<script src="/goal-context.js"></script>
+<script src="/ai-response-history.js"></script>
+</body>
+</html>

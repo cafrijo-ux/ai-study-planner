@@ -1,0 +1,65 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.0.6'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+    runtimeOnly 'com.h2database:h2'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	testImplementation 'org.springframework.security:spring-security-test'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
+	runtimeOnly 'com.mysql:mysql-connector-j'
+	// Connector/J internals are exercised by offline Mock tests as well as used at runtime.
+	testImplementation 'com.mysql:mysql-connector-j'
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+def isolatedResources = tasks.register('isolatedTestResources', Sync) {
+    from sourceSets.main.resources
+    exclude 'application*.properties'
+    into layout.buildDirectory.dir('isolated-test-resources')
+}
+tasks.named('test') {
+	useJUnitPlatform()
+    // H2 tests prove the MySQL driver is absent; driver internals run in a separate task.
+    dependsOn isolatedResources
+    classpath = classpath.filter { !it.name.startsWith('mysql-connector-j-') && it != sourceSets.main.output.resourcesDir } + files(isolatedResources)
+    exclude 'review/connector/**'
+    forkEvery = 1
+    maxParallelForks = 2
+}
+
+tasks.register('connectorTest', Test) {
+    description = 'Offline Connector/J mocks; no real MySQL connection.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    include 'review/connector/**'
+    useJUnitPlatform()
+    forkEvery = 1
+    shouldRunAfter tasks.test
+}
+tasks.named('check') { dependsOn tasks.named('connectorTest') }
+
+tasks.named('processResources') {
+    exclude('**/*.bak', '**/*.backup-*', '**/*.before-*')
+}
+
+// Safe public configuration is deliberately included in the executable JAR.

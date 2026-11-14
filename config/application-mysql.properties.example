@@ -1,0 +1,11 @@
+# Optional separate MySQL instance/schema only. Never point this at existing personal data.
+# Copy outside source control; activate deliberately after reviewing your own empty schema.
+spring.datasource.url=${PLANNER_JDBC_URL}
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.datasource.username=${PLANNER_DB_USER}
+spring.datasource.password=${PLANNER_DB_PASSWORD}
+spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
+spring.jpa.hibernate.ddl-auto=none
+spring.sql.init.mode=never
+# public-local bootstrap is H2-only. MySQL requires a separately reviewed profile,
+# schema and owner provisioning; it is not part of the default quick start.

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PWA 실제 브라우저 검사 · Mock 전용</title>
+<style>body{font:16px system-ui,sans-serif;max-width:850px;margin:30px auto;padding:16px;background:#f5f7fc;color:#172034}button,a{padding:10px;display:inline-block;margin:6px}pre{white-space:pre-wrap;word-break:break-word;background:white;padding:16px}</style>
+<script src="study-cache.js"></script><script src="pwa-runtime.js"></script></head>
+<body><h1>오프라인 PWA 브라우저 검사</h1>
+<p>동일 프로젝트의 진단 도구입니다. 실제 계정·서버·AI를 사용하지 않습니다. 테스트용 IndexedDB만 수정합니다.</p>
+<p><a href="./">Flutter 앱 열기</a><button id="run">실제 저장소·서비스 워커 검사</button><button id="save" disabled>결과 JSON 저장</button></p>
+<pre id="output">검사 버튼을 누르세요. 최초 설치는 필수 파일 캐시가 끝날 때까지 기다립니다.</pre>
+<p>이 페이지의 PASS는 앱 화면 전체나 서버 중단 후 재실행 검증을 대신하지 않습니다. 캐시 업데이트는 모든 앱/진단 탭을 닫고 다시 열어 별도로 확인해야 합니다.</p>
+<script>
+let result;
+const output=document.getElementById('output');
+function assert(value,message){if(!value)throw Error(message);}
+async function check(name,fn){
+ try{const details=await fn();result.tests.push({name,pass:true,details});}
+ catch(e){result.tests.push({name,pass:false,error:e.message});}
+ output.textContent=JSON.stringify(result,null,2);
+}
+function status(worker){return new Promise((resolve,reject)=>{
+ const c=new MessageChannel(),t=setTimeout(()=>reject(Error('SW STATUS timeout')),4000);
+ c.port1.onmessage=e=>{clearTimeout(t);c.port1.close();resolve(e.data);};
+ worker.postMessage({type:'STATUS'},[c.port2]);
+});}
+document.getElementById('run').onclick=async()=>{
+ document.getElementById('run').disabled=true;
+ result={time:new Date().toISOString(),userAgent:navigator.userAgent,url:location.href,networkOnline:navigator.onLine,tests:[]};
+ output.textContent='필수 파일 캐시 준비 중…';
+ const store=new PlannerSnapshot.MockSnapshotStore('planner-ipad-mock-test-v1');
+ const identity={server:'https://mock.invalid',userId:1};
+ const key={...identity,goalId:1,kind:'day',period:'2026-11-06'};
+ const make=status=>({schema:1,key,source:'MOCK_FIXTURE',syncedAt:'2026-11-06T00:00:00Z',
+   payload:{saved:true,goalId:1,planDate:key.period,planStatus:status}});
+ await check('SW 등록·필수 캐시 준비',async()=>{
+   await PlannerPwaStart();
+   const registration=await navigator.serviceWorker.getRegistration('/ipad/');
+   assert(registration&&new URL(registration.scope).pathname==='/ipad/','별도 /ipad/ scope 아님');
+   const s=await status(navigator.serviceWorker.controller||registration.active);
+   assert(s.ready,'필수 캐시 미완료');
+   return s;
+ });
+ await check('Cache Storage API/인증 응답 제외',async()=>{
+   const all=(await caches.keys()).filter(x=>x.startsWith('planner-ipad-shell:/ipad/:'));
+   assert(all.length>0,'앱 캐시 없음');
+   let count=0;
+   for(const name of all) {
+     const requests=await (await caches.open(name)).keys();count+=requests.length;
+     assert(requests.every(r=>!/^\/(auth|api)(\/|$)/.test(new URL(r.url).pathname)),'API 응답 캐시 발견');
+   }
+   return {cacheNames:all,entries:count};
+ });
+ await check('실제 IndexedDB 저장·새 연결 조회',async()=>{
+   await store.activate(identity);await store.clear(identity);
+   await store.writeBatch([make('FINAL')]);
+   const reopened=new PlannerSnapshot.MockSnapshotStore('planner-ipad-mock-test-v1');
+   const value=await reopened.read(key);
+   assert(value.state==='ready'&&value.record.payload.planStatus==='FINAL','FINAL 조회 실패');
+   return {state:value.state,source:value.record.source,syncedAt:value.record.syncedAt};
+ });
+ await check('DRAFT·저장 계획 없음·미조회 구분',async()=>{
+   await store.writeBatch([make('DRAFT')]);
+   assert((await store.read(key)).record.payload.planStatus==='DRAFT','DRAFT');
+   await store.writeBatch([{...make('DRAFT'),payload:{saved:false,goalId:1,planDate:key.period}}]);
+   assert((await store.read(key)).state==='empty','빈 계획');
+   assert((await store.read({...key,period:'2026-11-07'})).state==='missing','미조회');
+ });
+ await check('자격 증명 거부·잘못된 배치 원자성',async()=>{
+   await store.clear(identity);
+   let blocked=false;
+   try{await store.writeBatch([make('FINAL'),{...make('DRAFT'),payload:{password:'fake-secret'}}]);}
+   catch(e){blocked=e.code==='SENSITIVE_FIELD';}
+   assert(blocked,'자격 증명 허용됨');
+   assert((await store.read(key)).state==='missing','일부만 저장됨');
+ });
+ await check('손상된 데이터 체크섬 감지',async()=>{
+   await store.writeBatch([make('FINAL')]);
+   const db=await store.open();
+   await new Promise((resolve,reject)=>{
+     const tx=db.transaction('snapshots','readwrite'),s=tx.objectStore('snapshots'),id=PlannerSnapshot.storageKey(key),r=s.get(id);
+     r.onsuccess=()=>{const value=r.result;value.payload.planStatus='DRAFT';s.put(value,id);};
+     tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error);
+   });
+   assert((await store.read(key)).state==='corrupt','손상 감지 실패');
+ });
+ await check('사용자 변경·데이터 정리',async()=>{
+   await store.activate({...identity,userId:2});
+   await store.activate(identity);
+   assert((await store.read(key)).state==='missing','이전 사용자 데이터 남음');
+   await store.clear(identity);
+ });
+ result.finished=true;result.passed=result.tests.every(t=>t.pass);
+ output.textContent=JSON.stringify(result,null,2);
+ document.getElementById('save').disabled=false;
+ document.getElementById('run').disabled=false;
+};
+document.getElementById('save').onclick=()=>{
+ const blob=new Blob([JSON.stringify(result,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='planner-offline-browser-results.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+</script></body></html>
+

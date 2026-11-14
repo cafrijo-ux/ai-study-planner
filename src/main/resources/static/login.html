@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>로그인 · AI 공부 플래너</title>
+<!-- Login must render before authentication; protected shared CSS is intentionally not requested here. -->
+<style>
+*{box-sizing:border-box}body{font-family:system-ui,"Malgun Gothic",sans-serif;background:#f4f7fc;color:#172d4b;margin:0;padding:24px 16px;line-height:1.65;overflow-wrap:anywhere}
+main{max-width:416px;margin:6vh auto;padding:28px;background:white;border:1px solid #dfe6f0;border-radius:20px;box-shadow:0 8px 28px #1831530c}
+h1{font-size:clamp(26px,6vw,34px);line-height:1.25;letter-spacing:-.035em;color:#172f53}label,input,button{display:block;width:100%;margin:12px 0}
+input,button{min-height:48px;padding:12px;font:inherit;border-radius:12px}input{border:1px solid #d3ddea;background:#fff;color:#172d4b;min-width:0}
+button{border:0;background:#203e69;color:white;font-weight:700;cursor:pointer;transition:background-color .22s,transform .22s}button:hover:not(:disabled){background:#315cde}button:active:not(:disabled){transform:scale(.985)}button:disabled{opacity:.65;cursor:wait}
+input:focus-visible,button:focus-visible{outline:3px solid #93b6f5;outline-offset:3px}#loginMessage{min-height:3em}
+@media(max-width:400px){main{padding:22px 18px;margin:3vh auto}}@media(prefers-reduced-motion:reduce){button{transition:none}}
+</style>
+<script src="/auth-client.js" defer></script><script src="/login.js" defer></script>
+</head>
+<body><main><h1>AI 공부 플래너</h1><p>허용된 시연 계정으로 로그인하세요.</p>
+<form id="loginForm" action="/auth/login" method="post"><label>아이디<input name="username" autocomplete="username" required maxlength="100"></label>
+<label>비밀번호<input name="password" type="password" autocomplete="current-password" required maxlength="200"></label><button id="loginButton" type="submit">로그인</button></form>
+<p id="loginMessage" role="alert" aria-live="polite"></p>
+<p>로그인할 때와 사용할 때 같은 주소를 유지하세요. HTTP 로컬 테스트에서는 localhost 주소를 사용하세요. 127.0.0.1은 쿠키를 공유하지 않으며, 브라우저에 따라 보안 쿠키가 차단될 수 있습니다. 외부 서비스에서는 정해진 HTTPS 주소만 사용합니다.</p></main></body></html>

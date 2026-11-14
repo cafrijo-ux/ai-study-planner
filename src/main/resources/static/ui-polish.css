@@ -1,0 +1,206 @@
+/* AI Study Planner - shared UI polish */
+
+button {
+    transition: transform .16s ease,
+                box-shadow .16s ease,
+                filter .16s ease;
+}
+
+button:not(:disabled):hover {
+    transform: translateY(-1px);
+    filter: brightness(1.035);
+    box-shadow: 0 5px 14px rgba(30, 64, 175, .12);
+}
+
+button:not(:disabled):active {
+    transform: translateY(0);
+    filter: brightness(.98);
+}
+
+button:disabled {
+    cursor: not-allowed;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 3px;
+}
+
+input,
+select,
+textarea {
+    transition: box-shadow .16s ease,
+                border-color .16s ease;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, .10);
+}
+
+@media (max-width: 600px) {
+    input,
+    select,
+    textarea {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    button,
+    input,
+    select,
+    textarea {
+        transition: none !important;
+    }
+}
+/* Dashboard readability v1 */
+
+/* PC 화면 공간 활용 */
+@media (min-width: 1100px) {
+    body:has(.dashboard-nav) .container {
+        width: 96%;
+        max-width: 1280px;
+    }
+}
+
+/* 설명 글씨 가독성 */
+body:has(.dashboard-nav) .dashboard-subtitle,
+body:has(.dashboard-nav) .page-title-row p,
+body:has(.dashboard-nav) .muted-text {
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+/* 상단 메뉴 */
+body:has(.dashboard-nav) .dashboard-nav .nav-button {
+    font-size: 15px;
+}
+
+/* 작은 정보 글씨 */
+body:has(.dashboard-nav) .dashboard-quick-links a,
+body:has(.dashboard-nav) .today-progress-details,
+body:has(.dashboard-nav) .schedule-subnote,
+body:has(.dashboard-nav) .schedule-slot .slot-clock,
+body:has(.dashboard-nav) .schedule-slot .slot-subtitle,
+body:has(.dashboard-nav) .schedule-slot .slot-minutes {
+    font-size: 14px;
+}
+
+/* 작은 화면에서는 기존 반응형 유지 */
+@media (max-width: 820px) {
+    body:has(.dashboard-nav) .container {
+        max-width: 100%;
+    }
+}
+/* Study form and AI question polish v1 */
+
+/* 공부 기록과 AI 질문 화면의 본문 */
+body:has(.page-header) label,
+body:has(#submitButton) label {
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.6;
+}
+
+/* 입력창 가독성 */
+body:has(.page-header) input,
+body:has(.page-header) select,
+body:has(.page-header) textarea,
+body:has(#submitButton) input,
+body:has(#submitButton) select,
+body:has(#submitButton) textarea {
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+/* AI 질문 버튼 */
+body:has(#submitButton) #submitButton {
+    min-height: 44px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+/* AI 모델 선택 버튼 */
+body:has(#submitButton) button[aria-pressed] {
+    transition: background-color .18s ease,
+                border-color .18s ease,
+                transform .18s ease;
+}
+
+/* 모바일 입력 편의성 */
+@media (max-width: 600px) {
+    body:has(.page-header) input,
+    body:has(.page-header) select,
+    body:has(.page-header) textarea,
+    body:has(#submitButton) input,
+    body:has(#submitButton) select,
+    body:has(#submitButton) textarea {
+        font-size: 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body:has(#submitButton) button[aria-pressed] {
+        transition: none;
+    }
+}
+/* AI disabled spinner fix */
+#submitButton:disabled::after {
+    content: none !important;
+    display: none !important;
+    animation: none !important;
+}
+#submitButton:disabled {
+    cursor: not-allowed;
+}
+
+/* Shared final-demo finish. Existing page structures, IDs and actions stay intact. */
+:root { --ink:#172d4b;--muted:#66768d;--line:#dfe6f0;--brand:#315cde;--surface:#fff;--radius:20px; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",Arial,sans-serif; color:var(--ink);background:#f4f7fc;line-height:1.6;-webkit-text-size-adjust:100%; }
+body .container,body .wrap { min-width:0;box-sizing:border-box; }
+body:not(:has(.dashboard-nav))>.container { width:100%;max-width:1060px; }
+.card,.panel,.entry,.form-section,.optional-panel,.submit-panel { border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 8px 28px rgba(24,49,83,.045); }
+h1,h2,h3 { letter-spacing:-.035em; }
+.card h2 { color:#203d66; }
+body h1 { color:#172f53;text-align:left;font-weight:800;line-height:1.25;font-size:clamp(27px,3.2vw,38px); }
+button,input,select,textarea { font-family:inherit; }
+button,.button,.back-link { border-radius:12px;min-height:44px; }
+button { transition:background-color .22s ease,color .22s ease,box-shadow .22s ease,transform .22s ease; }
+button:not(:disabled):active,.button:active { transform:scale(.985); }
+input,select,textarea { border-color:#d3ddea;border-radius:12px; }
+textarea { line-height:1.75; }
+.info-box,.stat-box { background:#f6f8fd;border:1px solid #e5ebf4;border-radius:14px; }
+.value { color:#213e68; }
+body:has(.dashboard-nav) .container { width:100%;max-width:1440px;margin-inline:auto; }
+.dashboard-header { background:linear-gradient(120deg,#142c50,#264975);border-radius:24px;padding:27px 30px; }
+.dashboard-header h1 { margin:6px 0;color:white; }
+.dashboard-header .dashboard-eyebrow { color:#b4caed;letter-spacing:.15em; }
+.dashboard-header .dashboard-subtitle { color:#d7e3f6;margin:8px 0 0;max-width:780px; }
+.dashboard-nav { padding:7px;background:#e9eff8;border:1px solid #dce5f1;border-radius:16px; }
+.dashboard-nav .nav-button { background:transparent;border-radius:11px;min-height:48px; }
+body:has(.dashboard-nav) .dashboard-nav .nav-button.is-active { color:#fff;background:#203e69;box-shadow:0 4px 10px #203e6922; }
+.goal-picker { background:#fff;border:1px solid var(--line);border-radius:18px; }
+.page-title-row h2 { font-size:26px;color:#1c365b; }
+.page-title-row p,.page-description { color:var(--muted); }
+.card.is-visible { animation:demo-section-in .22s ease-out; }
+@keyframes demo-section-in { from { opacity:.45;transform:translateY(5px); } to {opacity:1;transform:none;} }
+.model-option[aria-pressed=true] { box-shadow:0 4px 14px #315cde26; }
+.ai-response-card { border-color:#dce5f1; }
+.ai-response-metadata { border-radius:10px; }
+.stat strong { color:#203e69; }
+@media(max-width:600px){
+  body:has(.dashboard-nav) {padding:14px 10px;}
+  .dashboard-header{padding:22px 18px;border-radius:18px;}
+  .dashboard-nav{gap:5px;}
+  .dashboard-nav .nav-button{padding:10px 7px;font-size:13px;}
+  .card,.panel,.form-section,.submit-panel{border-radius:16px;}
+  body:not(:has(.dashboard-nav))>.container{max-width:100%;}
+}
+@media(prefers-reduced-motion:reduce){.card.is-visible,.ai-response-card{animation:none!important}button,.button,input,select,textarea{transition:none!important}}

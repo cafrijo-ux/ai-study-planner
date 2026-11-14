@@ -1,0 +1,68 @@
+{
+  "date": "2026-11-14",
+  "timezone": "Asia/Seoul",
+  "uploadTarget": "https://github.com/cafrijo-ux/ai-study-planner",
+  "githubMutations": false,
+  "java": {
+    "test": {
+      "tests": 708,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "connectorTest": {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "flutter": {
+    "androidPassed": 327,
+    "pwaPassed": 352
+  },
+  "browser": {
+    "calendarPassed": 40,
+    "auditPassed": 44,
+    "externalPageRequests": 0
+  },
+  "pwaNodePassed": 13,
+  "packagedRuntime": {
+    "passed": true,
+    "checks": [
+      "packaged-jar-starts-on-isolated-port",
+      "csrf-and-real-form-login",
+      "fresh-h2-has-no-personal-goals",
+      "goal-and-subject-save",
+      "study-log-save",
+      "analysis-without-api-key",
+      "all-ai-generation-routes-disabled",
+      "file-h2-restart-preserves-goal-and-study-log"
+    ],
+    "actualAiCalls": 0,
+    "originalDbConnections": 0,
+    "port": 18083
+  },
+  "windowsLauncher": {
+    "passed": true,
+    "port": 18084,
+    "loopback": true,
+    "newReleaseH2": true,
+    "aiDisabled": true
+  },
+  "pwaBrowser": {
+    "passed": true,
+    "offlineReload": true,
+    "shellReady": true,
+    "externalRequests": 0,
+    "actualAiCalls": 0
+  },
+  "gitleaks": {
+    "version": "8.30.1",
+    "finalFindings": 0
+  },
+  "originalPreservation": {
+    "checked": 326,
+    "changed": []
+  }
+}

@@ -1,0 +1,169 @@
+/* Scoped to the existing dashboard; no global theme or page overrides. */
+#studyPlanCalendar.card { grid-column:1 / -1; min-width:0; padding:22px; }
+#studyPlanCalendar *, #studyPlanCalendar *::before, #studyPlanCalendar *::after { box-sizing:border-box; }
+#studyPlanCalendar button { font:inherit; cursor:pointer; min-height:40px; margin:0; padding:8px 12px; color:var(--ink,#172b4d); border:1px solid var(--line,#dfe7f3); border-radius:9px; background:white; box-shadow:none; transition:background .18s,transform .18s,border-color .18s; }
+#studyPlanCalendar button:hover { background:#eef4ff; border-color:#adc8f3; }
+#studyPlanCalendar button:active { transform:translateY(1px); }
+#studyPlanCalendar button:focus-visible,#studyPlanCalendar summary:focus-visible { outline:3px solid #93b9fa; outline-offset:2px; }
+#studyPlanCalendar button:disabled { opacity:.45; cursor:not-allowed; }
+.pc-calendar-header { display:flex; flex-wrap:wrap; justify-content:space-between; gap:16px; align-items:center; }
+#studyPlanCalendar h2 { margin:0 0 6px; font-size:22px; color:var(--ink,#172b4d); }
+.pc-goal { margin:5px 0 10px; color:var(--muted,#61718a); font-size:13px; overflow-wrap:anywhere; }
+.pc-controls { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.pc-month { font-size:18px; min-width:120px; text-align:center; font-variant-numeric:tabular-nums; }
+.pc-notice { padding:10px 12px; border-radius:10px; line-height:1.7; background:#f0f5ff; color:#315480; margin:14px 0; overflow-wrap:anywhere; }
+.pc-notice[role=alert] { background:#fff4df; color:#754500; }
+.pc-calendar-layout { display:grid; grid-template-columns:minmax(0,1.8fr) minmax(285px,1fr); gap:20px; align-items:start; }
+.pc-calendar-left,.pc-day-detail { min-width:0; }
+.pc-calendar-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
+.pc-weekday { text-align:center; font-size:12px; font-weight:700; padding:8px 0; color:var(--muted,#61718a); }
+.pc-weekday:nth-child(7) { color:#a24452; }
+#studyPlanCalendar .pc-day { display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; text-align:left; gap:4px; min-height:136px; padding:7px 6px; border-radius:10px; background:#fbfcff; width:100%; overflow:hidden; }
+#studyPlanCalendar .pc-day:hover { background:#f0f5ff; }
+#studyPlanCalendar .pc-day.pc-today { border-color:#5085df; }
+#studyPlanCalendar .pc-day.pc-selected { border:2px solid #2563eb; padding:6px 5px; background:#eef4ff; }
+#studyPlanCalendar .pc-outside { opacity:.48; }
+.pc-day-top { display:flex; gap:3px; flex-wrap:wrap; align-items:center; justify-content:space-between; font-size:13px; font-weight:700; }
+.pc-day.pc-today .pc-day-top>span:first-child { background:#2563eb; color:white; padding:2px 5px; border-radius:7px; }
+.pc-state { font-size:9px; font-weight:700; color:#365881; letter-spacing:-.03em; }
+.pc-day-total { display:block; color:#61718a; font-size:11px; font-variant-numeric:tabular-nums; }
+.pc-event { display:block; padding:3px 4px; background:#f0f3fa; border-left:3px solid var(--subject-color); border-radius:4px; min-width:0; line-height:1.35; }
+.pc-event-name { display:block; font-size:12px; font-weight:650; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; color:#253957; }
+.pc-event-time { display:block; font-size:10px; color:#566780; }
+.pc-more { font-size:10px; font-weight:700; color:#365881; }
+.pc-legend { display:flex; gap:8px 14px; flex-wrap:wrap; padding:14px 0 2px; }
+.pc-legend-item { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#405573; overflow-wrap:anywhere; max-width:100%; }
+.pc-legend-item::before { content:''; display:inline-block; flex:0 0 10px; height:10px; border-radius:3px; background:var(--subject-color); }
+.pc-hint { font-size:12px; line-height:1.7; color:#61718a; margin:10px 0; overflow-wrap:anywhere; }
+.pc-day-detail { border:1px solid var(--line,#dfe7f3); padding:16px; border-radius:14px; background:#fbfcff; position:sticky; top:12px; max-height:min(850px,calc(100dvh - 24px)); overflow:auto; }
+.pc-day-detail h3 { margin:0; font-size:20px; }
+.pc-sources { display:flex; flex-wrap:wrap; gap:6px; }
+#studyPlanCalendar .pc-source { font-size:12px; padding:6px 9px; min-height:36px; }
+#studyPlanCalendar .pc-source[aria-pressed=true] { color:#17499e; background:#e8f0ff; border-color:#7ba3eb; font-weight:700; }
+.pc-source-notice { font-size:12px; color:#536985; line-height:1.6; }
+.pc-day-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:14px 0; }
+.pc-day-stats>div { padding:10px; background:white; border:1px solid #e1e8f4; border-radius:9px; }
+.pc-day-stats dt { font-size:11px; color:#61718a; }
+.pc-day-stats dd { margin:4px 0 0; font-size:21px; font-weight:750; color:#214d97; }
+.pc-subject-filters { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0; }
+#studyPlanCalendar .pc-subject-filters button { font-size:11px; border-left:4px solid var(--subject-color,#8b95a5); white-space:normal; overflow-wrap:anywhere; text-align:left; }
+#studyPlanCalendar .pc-subject-filters button[aria-pressed=true] { background:#e8f0ff; border-color:#7ba3eb; border-left-color:var(--subject-color,#8b95a5); }
+.pc-detail-timeline { display:flex; flex-direction:column; gap:9px; }
+.pc-slot { border:1px solid #e1e8f4; border-left:4px solid var(--subject-color); border-radius:10px; padding:12px; background:white; }
+.pc-slot summary { cursor:pointer; display:flex; gap:6px 8px; flex-wrap:wrap; align-items:center; font-size:13px; overflow-wrap:anywhere; }
+.pc-slot summary::after { content:'상세 보기 ⌄'; font-size:11px; color:#6b7f9b; }
+.pc-slot[open] summary::after { content:'상세 접기 ⌃'; }
+.pc-slot-clock { flex-basis:100%; font-size:13px; font-variant-numeric:tabular-nums; color:#315a93; }
+.pc-slot-tag { font-size:10px; padding:2px 5px; border-radius:5px; background:#eef2f9; color:#405573; }
+.pc-slot-minutes { font-size:12px; font-weight:700; }
+.pc-slot-activity { flex-basis:100%; color:#566780; line-height:1.6; }
+.pc-rest { background:#f2f4f7; }
+.pc-empty { line-height:1.8; color:#61718a; padding:22px 0; }
+@media(max-width:1150px) { .pc-calendar-layout { grid-template-columns:minmax(0,1fr); } .pc-day-detail { position:static; max-height:none; } #studyPlanCalendar .pc-day { min-height:130px; } }
+@media(max-width:600px) {
+  #studyPlanCalendar.card { padding:12px; } .pc-calendar-grid { gap:3px; }
+  #studyPlanCalendar h2 { font-size:20px; } .pc-controls { width:100%; gap:4px; }
+  #studyPlanCalendar .pc-controls button { padding:7px 9px; font-size:12px; }
+  .pc-month { min-width:108px; font-size:16px; }
+  #studyPlanCalendar .pc-day { min-height:92px; gap:4px; padding:5px 3px; border-radius:7px; }
+  #studyPlanCalendar .pc-day.pc-selected { padding:4px 2px; }
+  .pc-day-top { font-size:12px; } .pc-state { font-size:7px; } .pc-day-total { font-size:9px; }
+  .pc-event { min-height:5px; height:5px; padding:0; border-left:0; background:var(--subject-color); }
+  .pc-event-name,.pc-event-time { display:none; } .pc-more { font-size:8px; }
+  .pc-day-detail { padding:12px; } .pc-weekday { font-size:11px; }
+}
+@media(prefers-reduced-motion:reduce) { #studyPlanCalendar button { transition:none; } }
+
+.pc-month-summary { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0; }
+.pc-month-summary>div { padding:14px 16px;border:1px solid #e0e8f5;background:#f6f9fe;border-radius:14px;min-width:0; }
+.pc-month-summary span { display:block;font-size:12px;color:#60718a;margin-bottom:6px; }
+.pc-month-summary strong { font-size:19px;line-height:1.4;color:#233f70;overflow-wrap:anywhere; }
+.pc-record-marker { display:block;font-size:10px;line-height:1.5;color:#236455;margin-top:auto;overflow-wrap:anywhere; }
+.pc-actual-records { margin-top:22px;padding-top:18px;border-top:1px solid #dce5ef; }
+.pc-actual-records h4 { margin:0 0 10px;font-size:16px;color:#244467; }
+.pc-actual-total { color:#256457;font-weight:750; }
+.pc-record { padding:12px;margin-top:9px;border-radius:10px;background:white;border:1px solid #e1e8f4;border-left:4px solid var(--subject-color);overflow-wrap:anywhere; }
+.pc-record-minutes { display:block;font-weight:700;color:#2f5c86;margin-top:5px; }
+.pc-record-content { white-space:pre-wrap;line-height:1.7;font-size:13px; }
+@media(max-width:600px){.pc-month-summary{gap:5px}.pc-month-summary>div{padding:9px 7px}.pc-month-summary strong{font-size:14px}.pc-month-summary span{font-size:10px}.pc-record-marker{font-size:8px}}
+
+/* Calendar desktop readability v1 */
+
+@media (min-width: 1151px) {
+
+    /* 달력과 상세 패널의 비율 조정 */
+    .pc-calendar-layout {
+        grid-template-columns: minmax(0, 1.6fr) minmax(350px, 1fr);
+        gap: 18px;
+    }
+
+    /* 날짜 칸 확대 */
+    #studyPlanCalendar .pc-day {
+        min-height: 155px;
+        padding: 10px 8px;
+        gap: 6px;
+    }
+
+    #studyPlanCalendar .pc-day.pc-selected {
+        padding: 9px 7px;
+    }
+
+    .pc-day-top {
+        font-size: 14px;
+    }
+
+    .pc-state {
+        font-size: 10px;
+    }
+
+    .pc-day-total {
+        font-size: 12px;
+    }
+
+    /* 과목별 일정 가독성 */
+    .pc-event {
+        padding: 5px 6px;
+        border-left-width: 4px;
+    }
+
+    .pc-event-name {
+        font-size: 13px;
+    }
+
+    .pc-event-time {
+        font-size: 11px;
+    }
+
+    /* 상세 시간표 */
+    .pc-day-detail {
+        top: 76px;
+        max-height: calc(100dvh - 92px);
+        padding: 18px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    .pc-day-detail h3 {
+        font-size: 22px;
+    }
+
+    .pc-detail-timeline {
+        gap: 7px;
+    }
+
+    .pc-slot {
+        padding: 10px;
+    }
+
+    .pc-slot summary {
+        font-size: 14px;
+    }
+
+    .pc-slot-clock {
+        font-size: 14px;
+    }
+
+    .pc-slot-activity {
+        line-height: 1.7;
+    }
+}
