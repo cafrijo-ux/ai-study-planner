@@ -46,7 +46,7 @@ public class StudyRescheduleSaveController {
                 StudySavedPlanService.USER_ID, Date.valueOf(sourceDate));
         if (sourceSettings.isEmpty()) {
             return ResponseEntity.badRequest().body(message(
-                    "먼저 학습 계획 탭에서 오늘의 시간표를 MySQL에 저장해 주세요."));
+                    "먼저 학습 계획 탭에서 오늘의 시간표를 저장해 주세요."));
         }
         LocalTime endClock = LocalTime.parse(sourceSettings.get(0).get("end_time").toString());
         boolean sourceFinished = !LocalDateTime.now(KOREA)

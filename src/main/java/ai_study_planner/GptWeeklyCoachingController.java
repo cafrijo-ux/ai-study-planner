@@ -298,10 +298,10 @@ public class GptWeeklyCoachingController {
                 .append("\n[어려웠던 개념] ").append(shortList(weakTopics))
                 .append("\n[오답 원인] ").append(shortList(wrongReasons)).append("\n");
         if (saved == null) {
-            prompt.append("[MySQL 재조정 계획] 오늘과 내일에 저장된 계획 없음. 최근 7일의 FINAL 계획은 별도로 확인한다.\n");
+            prompt.append("[저장된 재조정 계획] 오늘과 내일에 저장된 계획 없음. 최근 7일의 FINAL 계획은 별도로 확인한다.\n");
         } else {
             Map<String, Object> plan = saved.plan();
-            prompt.append("[MySQL 재조정 계획] 날짜: ").append(plan.get("scheduleDate"))
+            prompt.append("[저장된 재조정 계획] 날짜: ").append(plan.get("scheduleDate"))
                     .append(", 상태: ").append(saved.status())
                     .append(", 사용 가능: ").append(usable(saved))
                     .append(", 총 공부: ").append(known(plan.get("studyMinutes")))

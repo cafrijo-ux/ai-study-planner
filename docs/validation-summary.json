@@ -64,5 +64,86 @@
   "originalPreservation": {
     "checked": 326,
     "changed": []
+  },
+  "recordScope": "initial-public-preparation",
+  "publishedCommitVerification": {
+    "commit": "9f95db3f6929e8cb004c0f66dbd058626119a7f7",
+    "date": "2026-11-14",
+    "visibility": "private",
+    "githubActions": {
+      "status": "success",
+      "runUrl": "https://github.com/cafrijo-ux/ai-study-planner/actions/runs/43566686109",
+      "javaTestAndJar": true,
+      "webPassed": 84,
+      "pwaNodePassed": 13
+    },
+    "freshClone": {
+      "passed": true,
+      "separateFromOriginalAndPublicReady": true,
+      "pathWithSpaces": true,
+      "emptyGradleCache": true,
+      "java": "17.0.20.1",
+      "windowsPowerShell": "5.1.22621.6133",
+      "buildSeconds": 47,
+      "port": 18087,
+      "runtimeChecksPassed": 11,
+      "firstAccountAndH2": true,
+      "login": true,
+      "goalAndSubjectRegistration": true,
+      "planAndRecordSaving": true,
+      "monthlyCalendar": true,
+      "restartDataAndAccountPreserved": true,
+      "actualAiCalls": 0,
+      "outboundGuard": true,
+      "blockedDnsChecksPerRun": 2,
+      "successfulOutboundConnections": 0,
+      "externalBrowserRequests": 0,
+      "localAccountAndDbIgnoredByGit": true
+    },
+    "notVerified": [
+      "OS and JDK installation on a new PC",
+      "Android APK and physical devices",
+      "real MySQL connection",
+      "paid AI calls",
+      "iOS Safari PWA installation"
+    ]
+  },
+  "documentationUiReview": {
+    "date": "2026-11-14",
+    "scope": "documentation and display-string replacements",
+    "productionCodeFiles": 7,
+    "testExpectationFiles": 2,
+    "storageLogicChanged": false,
+    "sqlChanged": false,
+    "configurationChanged": false,
+    "readmeScreenshotRefreshed": true,
+    "javaRelevantTests": {
+      "tests": 169,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "bootJar": "success",
+    "webRelevantTests": {
+      "calendarPassed": 40,
+      "auditPassed": 44,
+      "externalRequests": 0
+    },
+    "flutterRelevantTests": {
+      "androidPassed": 66,
+      "pwaPassed": 66
+    },
+    "actualAiCalls": 0,
+    "committed": false,
+    "pushed": false,
+    "publicVisibilityChanged": false,
+    "remoteActionsRunForTheseEdits": false,
+    "security": {
+      "gitleaksVersion": "8.30.1",
+      "gitleaksFindings": 0,
+      "customScannerFindings": 0
+    },
+    "publicFileCount": 376,
+    "checksumFileCount": 375
   }
 }

@@ -88,7 +88,7 @@ void main() {
         180,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('현재 계산된 계획입니다. MySQL 저장본이 아닙니다.'), findsOneWidget);
+      expect(find.text('현재 계산된 계획입니다. 저장된 계획이 아닙니다.'), findsOneWidget);
       expect(find.text('확인된 미완료 60분 중 보충 9분 배정'), findsOneWidget);
       expect(find.text('91분'), findsWidgets);
       await tester.scrollUntilVisible(

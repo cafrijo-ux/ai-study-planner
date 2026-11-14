@@ -429,7 +429,7 @@ class _ServerStudyPlanState extends State<ServerStudyPlan> {
                       Metric(label: '휴식', value: '${plan['breakMinutes']}분'),
                     const Text('보충 배정은 실제 공부 완료를 뜻하지 않습니다.'),
                     if (!_isSaved && plan['planSaved'] != true)
-                      const Text('현재 계산된 계획입니다. MySQL 저장본이 아닙니다.'),
+                      const Text('현재 계산된 계획입니다. 저장된 계획이 아닙니다.'),
                     if (plan['savedPlanNotice'] != null)
                       Text(_value(plan['savedPlanNotice'])),
                     if (plan['warning'] != null) Text(_value(plan['warning'])),

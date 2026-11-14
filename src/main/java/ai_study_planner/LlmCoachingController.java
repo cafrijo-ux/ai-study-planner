@@ -193,7 +193,7 @@ public class LlmCoachingController {
 
         result.put("apiStatus", "Gemini API 연결 성공");
         result.put("message", Boolean.TRUE.equals(result.get("savedPlanReferenced"))
-                ? "Gemini가 현재 목표의 공부 기록과 MySQL에 저장된 재조정 계획을 참고해 코칭을 생성했습니다."
+                ? "Gemini가 현재 목표의 공부 기록과 저장된 재조정 계획을 참고해 코칭을 생성했습니다."
                 : "Gemini가 현재 목표의 공부 기록을 바탕으로 코칭을 생성했습니다. 저장된 재조정 계획은 아직 없습니다.");
         result.put("demoMode", false);
         result.put("responseSource", "provider");
@@ -416,7 +416,7 @@ public class LlmCoachingController {
                                     LocalDate planDate, Map<String, Object> result) {
         if (saved == null) {
             result.put("savedPlanStatus", "NONE");
-            return "[MySQL 저장된 자동 재조정 계획]\n- 현재 목표에 대해 오늘 또는 내일 저장된 계획이 없습니다.\n";
+            return "[저장된 자동 재조정 계획]\n- 현재 목표에 대해 오늘 또는 내일 저장된 계획이 없습니다.\n";
         }
         Map<String, Object> plan = saved.plan();
         boolean valid = Boolean.TRUE.equals(plan.get("isScheduleValid"))
@@ -432,11 +432,11 @@ public class LlmCoachingController {
         result.put("savedPlanNewStudyMinutes", plan.get("newStudyMinutes"));
 
         if (!valid) {
-            return "[MySQL 저장된 자동 재조정 계획]\n- 저장된 시간표의 충돌 검증이 올바르지 않아 사용하지 않습니다.\n";
+            return "[저장된 자동 재조정 계획]\n- 저장된 시간표의 충돌 검증이 올바르지 않아 사용하지 않습니다.\n";
         }
 
         StringBuilder context = new StringBuilder();
-        context.append("[MySQL에 저장된 재조정 학습 계획]\n");
+        context.append("[저장된 재조정 학습 계획]\n");
         context.append("- 계획 날짜: ").append(planDate).append('\n');
         context.append("- 저장 상태: ").append(saved.status())
                 .append(" (FINAL=최종 확정, DRAFT=임시 저장)\n");
@@ -472,7 +472,7 @@ public class LlmCoachingController {
                 context.append("- 주의: 공부 종료 시각이 지난 미확정 임시 계획입니다. 계획의 수치를 참고 자료로만 다루고, 갱신/확정이 필요하다고 안내하세요.\n");
             }
         } else {
-            context.append("- 위 계획은 MySQL에 FINAL로 저장된 계획입니다.\n");
+            context.append("- 위 계획은 FINAL로 저장된 계획입니다.\n");
         }
         return context.toString();
     }
